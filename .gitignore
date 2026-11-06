@@ -11,3 +11,9 @@ Thumbs.db
 # Testing artifacts
 cookies.txt
 nul
+
+# Generated TypeScript output and local settings
+dist/
+coverage/
+.env.*
+!.env.example

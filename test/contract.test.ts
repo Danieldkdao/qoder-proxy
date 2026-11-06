@@ -188,7 +188,7 @@ describe('build and dashboard contracts', () => {
     const browserSource = readFileSync(resolve(source, 'dashboard/public/app.js'), 'utf8');
     const start = browserSource.indexOf('function syntaxJson(');
     const end = browserSource.indexOf('function copyText(', start);
-    const fn = new Function(browserSource.slice(0, browserSource.indexOf('// ── State')) + browserSource.slice(browserSource.indexOf('function escHtml('), browserSource.indexOf('function mdToHtml(')) + browserSource.slice(start, end) + '; return syntaxJson;')();
+    const fn = new Function(browserSource.slice(browserSource.indexOf('function escHtml('), browserSource.indexOf('function mdToHtml(')) + browserSource.slice(start, end) + '; return syntaxJson;')();
     expect(fn({ content: '<img src=x onerror=alert(1)>' })).not.toContain('<img');
   });
 });

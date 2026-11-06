@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmitOnError": true,
+    "rootDir": "src/dashboard/public",
+    "outDir": "dist/dashboard/public",
+    "moduleDetection": "legacy"
+  },
+  "include": [
+    "src/dashboard/public/app.ts"
+  ]
+}

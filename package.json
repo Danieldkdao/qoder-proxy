@@ -1,11 +1,15 @@
 {
   "name": "qoder-openai-proxy",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "OpenAI-compatible API proxy for Qoder CLI",
-  "main": "src/server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "build": "node scripts/build.mts",
+    "start": "node dist/server.js",
+    "dev": "npm run build && node --watch dist/server.js",
+    "test": "npm run build && vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.browser.json --noEmit"
   },
   "keywords": [
     "qoder",
@@ -20,18 +24,19 @@
     "ajv": "^8.20.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "uuid": "^9.0.0"
+    "express": "^4.18.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.18.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.25",
     "@types/node": "^26.6.6",
-    "@types/uuid": "^10.0.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "qs": "^6.17.1"
   }
 }

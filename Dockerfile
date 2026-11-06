@@ -1,34 +1,21 @@
-FROM node:20-slim
-
-ENV PATH="/usr/local/bin:${PATH}"
-ENV QODERCLI_BIN="/usr/local/bin/qodercli"
-
-# Install qodercli globally — uses QODER_PERSONAL_ACCESS_TOKEN env var at runtime for auth.
-# node:20-slim is Debian-based (glibc) which is required by qodercli's Bun runtime.
-# Alpine (musl libc) is incompatible with Bun native binaries.
-RUN npm install -g @qoder-ai/qodercli \
-  && qodercli --version || true
-
-# Disable qodercli auto-updates so it never tries to download a new version
-# on startup inside the container (saves memory, eliminates update-induced delays).
-RUN mkdir -p /root/.qoder \
-  && echo '{"autoUpdates":false}' > /root/.qoder.json
-
+FROM node:24-slim AS build
 WORKDIR /app
-
-# Install production deps first (layer caching)
 COPY package*.json ./
-RUN npm ci --omit=dev
-
-# Copy source
+RUN npm ci
+COPY tsconfig*.json ./
+COPY scripts/ ./scripts/
 COPY src/ ./src/
+RUN npm run build && npm prune --omit=dev
 
+FROM node:24-slim AS runtime
+ARG QODERCLI_VERSION=1.1.84
+RUN npm install -g @qoder-ai/qodercli@${QODERCLI_VERSION} && qodercli --version
+WORKDIR /app
+ENV NODE_ENV=production HOST=0.0.0.0 QODERCLI_BIN=/usr/local/bin/qodercli
+COPY --from=build --chown=node:node /app/package*.json ./
+COPY --from=build --chown=node:node /app/node_modules/ ./node_modules/
+COPY --from=build --chown=node:node /app/dist/ ./dist/
+USER node
 EXPOSE 3000
-
-ENV NODE_ENV=production
-
-# Use a Node.js health check — no wget/curl needed, works on any base image
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',_=>process.exit(1))"
-
-CMD ["node", "src/server.js"]
+HEALTHCHECK --interval=30s --timeout=8s --start-period=15s --retries=3 CMD node -e "require('node:http').get('http://127.0.0.1:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+CMD ["node","dist/server.js"]
