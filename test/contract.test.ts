@@ -293,6 +293,16 @@ describe("HTTP / Hermes provider contract", () => {
         .join(""),
     ).toBe("WORKFLOW_DONE");
   });
+  it("explicitly reports unavailable usage when requested in streams", async () => {
+    const response = await request({ model: "auto", messages, stream: true, stream_options: { include_usage: true } });
+    const chunks = events(await response.text());
+    expect(chunks.at(-1)).toMatchObject({ choices: [], usage: null });
+  });
+  it("rejects malformed stream usage options", async () => {
+    for (const options of [[], { include_usage: "yes" }, { invented: true }]) {
+      expect((await request({ model: "auto", messages, stream: true, stream_options: options })).status).toBe(400);
+    }
+  });
   it("honors tool_choice none", async () => {
     const response = await request({
       model: "auto",
