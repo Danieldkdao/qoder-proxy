@@ -5,7 +5,10 @@ RUN npm ci
 COPY tsconfig*.json ./
 COPY scripts/ ./scripts/
 COPY src/ ./src/
-RUN npm run build && npm prune --omit=dev
+RUN npm run build
+
+FROM build AS production-dependencies
+RUN npm prune --omit=dev
 
 FROM node:24-slim AS runtime
 ARG QODERCLI_VERSION=1.1.84
@@ -14,7 +17,7 @@ RUN npm install -g @qoder-ai/qodercli@${QODERCLI_VERSION} && qodercli --version
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 QODERCLI_BIN=/usr/local/bin/qodercli
 COPY --from=build --chown=node:node /app/package*.json ./
-COPY --from=build --chown=node:node /app/node_modules/ ./node_modules/
+COPY --from=production-dependencies --chown=node:node /app/node_modules/ ./node_modules/
 COPY --from=build --chown=node:node /app/dist/ ./dist/
 USER node
 EXPOSE 3000
