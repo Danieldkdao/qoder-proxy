@@ -76,6 +76,10 @@ export async function handleChat(
       body.stream_options !== undefined &&
       (!body.stream_options ||
         typeof body.stream_options !== "object" ||
+        Array.isArray(body.stream_options) ||
+        body.stream !== true ||
+        ("include_usage" in body.stream_options &&
+          typeof body.stream_options.include_usage !== "boolean") ||
         Object.keys(body.stream_options).some((k) => k !== "include_usage"))
     )
       throw new ProxyError("Unsupported stream_options");
@@ -185,6 +189,12 @@ export async function handleChat(
       await write(
         legacy ? legacyChunk("", reason) : buildDoneChunk(model, id, reason),
       );
+      if (
+        (body.stream_options as { include_usage?: boolean } | undefined)
+          ?.include_usage
+      ) {
+        await write({ ...buildDoneChunk(model, id), choices: [], usage: null });
+      }
       res.end("data: [DONE]\n\n");
     } else if (legacy)
       res.json({

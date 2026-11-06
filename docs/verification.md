@@ -9,12 +9,12 @@ Reviewed and updated on 2026-11-06. Original source: `b6facd03`.
 - `8c8f358`: runtime-isolation and container prerequisite tests added before their fixes; two tests failed initially.
 - `767c43b`: shutdown escalation regression committed while failing, before its implementation.
 
-Additional tests cover a complete HTTP tool-call/result/final-answer exchange and runtime edge cases. The fake CLI is a deterministic subprocess fixture; tests do not substitute mocked Express responses for the HTTP integration coverage.
+Streaming usage negotiation was also tested while failing before its fix at `37f3163`. Additional tests cover a complete HTTP tool-call/result/final-answer exchange and runtime edge cases. The fake CLI is a deterministic subprocess fixture; tests do not substitute mocked Express responses for the HTTP integration coverage.
 
 ## Final local checks
 
-- **41 Vitest tests pass** on macOS with Node 26.
-- **41 Vitest tests pass** inside the Linux Node 24 Docker build stage.
+- **43 Vitest tests pass** on macOS with Node 26.
+- **43 Vitest tests pass** inside the Linux Node 24 Docker build stage.
 - Strict type checks pass for server, browser, build scripts and tests.
 - Prettier checks and `git diff --check` pass.
 - `npm audit` reports **zero vulnerabilities** in the installed lockfile.
