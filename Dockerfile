@@ -9,6 +9,7 @@ RUN npm run build && npm prune --omit=dev
 
 FROM node:24-slim AS runtime
 ARG QODERCLI_VERSION=1.1.84
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN npm install -g @qoder-ai/qodercli@${QODERCLI_VERSION} && qodercli --version
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 QODERCLI_BIN=/usr/local/bin/qodercli

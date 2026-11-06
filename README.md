@@ -1,260 +1,112 @@
 # Qoder OpenAI Proxy
 
-An OpenAI-compatible API wrapper for `qodercli` with built-in dashboard, metrics, and Docker support. 
-Use Qoder through any tool or library designed for OpenAI's API.
+A TypeScript OpenAI Chat Completions adapter for Qoder CLI, intended for a private Hermes Agent deployment. Hermes executes tools; the CLI runs with built-in tools disabled, no user/project settings, isolated temporary HOME/cwd, and no saved sessions.
 
-## Features
+## Requirements and quick start
 
-- ✅ **🔌 OpenAI-Compatible**: Drop-in API replacement for apps like LangChain and Open WebUI
-- **💬 Full Chat Support**: Support for `/v1/chat/completions` (system messages, multi-turn history)
-- **🛠 OpenAI Tool Calling**: Support for OpenAI-style function calling with custom tool definitions for compatible OpenAI API clients and libraries
-- **⚡ Streaming**: Real-time SSE streaming responses without lag
-- **🔄 Smart Model Mapping**: Accepts any AI model name (gpt-4, claude-3.5, custom names) with intelligent heuristic fallback—gracefully handles unknown models instead of crashing
-- **📊 Admin Dashboard**: Built-in dark-themed web dashboard for testing, viewing live logs, and monitoring proxy health
-- **🐳 Docker Native**: Zero-persistence RAM-only architecture designed for easy deployment to cloud services via our public GHCR image
+- Node.js 22.18+ (Node 24 recommended), npm, and Qoder CLI **1.1.84**.
+- A Qoder personal access token and sufficient account credits.
 
----
-
-## 🚀 Quick Start (Docker / Cloud Deployment)
-
-The proxy is containerized and available on the GitHub Container Registry. It runs completely statelessly—no volumes or persistent storage needed. All configuration is done via environment variables.
-
-### Deploying via Docker Run
-
-We expose port `3000` via TCP. Configure your personal tokens securely using environment variables:
-
-```bash
-docker run -d \
-  --name qoder-proxy \
-  -p 3000:3000 \
-  -e QODER_PERSONAL_ACCESS_TOKEN="your-qoder-pat" \
-  -e PROXY_API_KEY="your-secret-custom-key" \
-  -e DASHBOARD_PASSWORD="secure-dashboard-password" \
-  ghcr.io/foxy1402/qoder-proxy:latest
+```sh
+npm ci
+npm test
+cp .env.example .env
+# Edit .env: set QODER_PERSONAL_ACCESS_TOKEN and a strong PROXY_API_KEY.
+npm start
 ```
 
-### Environment Variables
+`npm test` builds the server and browser TypeScript before running Vitest. `npm run typecheck` checks types without emitting. `npm run format:check` checks formatting. `npm run dev` rebuilds the server/browser on changes and restarts the server. Generated JavaScript lives in ignored `dist/`; edit the `.ts` source.
 
-| Variable | Description | Required | Profile/Type |
-|---|---|---|---|
-| `QODER_PERSONAL_ACCESS_TOKEN` | Your Personal Access Token from [Qoder Integrations](https://qoder.com/account/integrations) | **Yes** | Secret |
-| `PROXY_API_KEY` | The secret key *you* choose to protect the `/v1` API from outside internet requests | **Yes*** | Secret (Bearer Token) |
-| `DASHBOARD_PASSWORD` | Password to access the web UI at `/dashboard/` | **Yes*** | Secret |
-| `PORT` | Container internal TCP port | No | Defaults to `3000` |
-| `DASHBOARD_ENABLED`| Set to `false` to disable the web UI | No | Defaults to `true` |
-| `CORS_ORIGIN` | Allowed origins for browser-based web clients (sets the `Access-Control-Allow-Origin` HTTP header). `*` = allow all domains. Set to a specific URL (e.g. `https://myapp.com`) to restrict access. Has no effect on server-to-server or CLI calls. | No | Defaults to `*` (allow all) |
-| `QODER_TIMEOUT_MS`| Maximum request timeout | No | Defaults to `120000` (2 min) |
+## Docker
 
-*\* Highly recommended when running on the public internet.*
-
----
-
-## ⚠️ Resource Requirements (Known qodercli Spike Behavior)
-
-This proxy spawns `qodercli` per request. During active generation, **CPU and RAM can spike sharply**, then drop back down after the response completes. This is expected behavior for the current wrapper design.
-
-Typical observed pattern:
-- CPU spikes during generation (short bursts can exceed 100% on multi-core hosts)
-- RAM spikes during generation (can approach ~1 GB on heavier prompts/output)
-- Memory drops back near baseline after completion
-
-Recommended minimum sizing:
-
-### Retail PC (local/self-host)
-- **CPU**: 4 physical cores recommended (2 cores minimum for light testing)
-- **RAM**: 8 GB system RAM recommended (4 GB minimum for light testing)
-
-### Cloud VM / Container Host
-- **Minimum**: 2 vCPU + 2 GB RAM
-- **Recommended**: 4 vCPU + 4 GB RAM
-- For concurrent traffic, plan roughly **1 active request per 1–2 vCPU** to avoid latency spikes or process kills.
-
-Practical stability tips:
-- Keep `QODER_MAX_OUTPUT_TOKENS=16k` unless you specifically need larger outputs
-- Avoid high concurrency on small instances
-- If the platform enforces strict memory limits, increase container memory to reduce `SIGKILL` risk
-
----
-
-## 🌐 The Admin Dashboard
-
-The built-in web dashboard provides full observability into what your proxy is doing. Access it at `http://your-server-ip:3000/dashboard/`.
-
-1. **Endpoints**: Get quick copy-paste snippets for integrating tools.
-2. **Playground**: Test the API live in your browser and swap between available models. 
-3. **Request Logs**: Inspect live incoming requests, view request payloads, duration, HTTP status, and assembled response text.
-4. **System Logs**: View background system errors from `qodercli`.
-
-*Note: All logs are stored securely in RAM and are completely erased whenever the Docker container restarts.*
-
----
-
-## 🤖 Smart Model Name Mapping
-
-The proxy intelligently maps model names to Qoder CLI tiers using a multi-tier resolution strategy:
-
-1. **Exact match**: Direct Qoder tier names (`auto`, `lite`, `ultimate`) pass through unchanged
-2. **Known aliases**: Common names like `gpt-4`, `claude-3.5-sonnet` map to specific tiers
-3. **Heuristic matching**: Unknown model names are analyzed (e.g., `claude-sonnet-4-5` → `auto`)
-4. **Graceful fallback**: Unrecognized names default to `lite` tier with logging
-
-**All responses come from Qoder's models** - this mapping just makes it easier to integrate with existing OpenAI-compatible tools.
-
-| Common Model Names | Maps To Qoder Tier | 
-|---|---|
-| `gpt-4`, `gpt-4o`, `claude-3.5-sonnet` | `auto` |
-| `o1`, `claude-3-opus` | `ultimate` |
-| `o1-mini`, `o3-mini`, `claude-3-sonnet`| `performance` |
-| `claude-3.5-haiku`, `gemini-flash` | `efficient` |
-| `gpt-3.5-turbo`, `gpt-4o-mini`, `claude-3-haiku` | `lite` |
-| *(Qoder native)* `qwen`, `qwen36plus` | `qmodel` (Qwen3.6-Plus) |
-| *(Qoder native)* `deepseek`, `deepseek-v4` | `dmodel` (DeepSeek-V4-Pro) |
-| *(Qoder native)* `deepseek-v4-flash` | `dfmodel` (DeepSeek-V4-Flash) |
-| *(Qoder native)* `kimi` | `kmodel` (Kimi-K2.6) |
-| *(Qoder native)* `minimax` | `mmodel` (MiniMax-M2.7) |
-| *(Qoder native)* `glm`, `glm51` | `gm51model` (GLM-5.1) |
-
-**Note**: You're getting responses from Qoder's AI models, not OpenAI or Anthropic. The name mapping is purely for compatibility with tools that expect standard model names.
-
----
-
-## 🛠 Usage Examples
-
-Once deployed, copy your host URL (e.g. `http://localhost:3000/v1` or `https://my-proxy.com/v1`) into any app that takes OpenAI-style endpoints, and set the API Key to whatever you defined as `PROXY_API_KEY`.
-
-### Python (OpenAI SDK)
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    base_url="http://localhost:3000/v1",
-    api_key="your-secret-custom-key" 
-)
-
-stream = client.chat.completions.create(
-    model="gpt-4o",  # The proxy will map this to the 'auto' tier
-    messages=[{"role": "user", "content": "Hello!"}],
-    stream=True
-)
-
-for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="", flush=True)
+```sh
+docker build -t qoder-proxy:local .
+docker run -d --name qoder-proxy --restart unless-stopped \
+  -p 127.0.0.1:3000:3000 --env-file .env qoder-proxy:local
 ```
 
-### Direct HTTP (cURL)
+The image uses Node 24, installs CA certificates and the pinned CLI, and runs as the non-root `node` user. Supply secrets at runtime. Do not mount your home directory, Docker socket, or source tree into the proxy. The default Docker build does not copy `.env`, Git metadata, tests, or development output.
 
-```bash
-curl http://localhost:3000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-custom-key" \
-  -d '{
-    "model": "claude-3.5-sonnet",
-    "messages": [
-      {"role": "system", "content": "You are a helpful assistant."},
-      {"role": "user", "content": "Hello!"}
-    ],
-    "stream": false
-  }'
+When Hermes runs on the same Mac as Docker, use `http://127.0.0.1:3000/v1`. From another container, use the proxy's service name on a private Docker network. For laptop access, SSH-forward the port rather than exposing it publicly.
+
+## Hermes
+
+Run `hermes model`, select a custom OpenAI-compatible Chat Completions endpoint, and enter:
+
+```text
+URL:   http://127.0.0.1:3000/v1
+Key:   your PROXY_API_KEY
+Model: auto
 ```
 
-## 🛠 OpenAI-Compatible Tool Calling
+Use actual Qoder identifiers. `/v1/models` is a static convenience catalog, not account-scoped discovery. Availability depends on your CLI/account. Native IDs include `auto`, `ultimate`, `performance`, `qmodel`, `kmodel`, `mmodel`, `dmodel`, `dfmodel`, `gm51model`. Friendly aliases such as `qwen` and `deepseek` resolve explicitly. Unknown IDs are rejected; GPT/Claude names are not advertised as models.
 
-The proxy now supports **full OpenAI-style function calling** with custom tool definitions. Define your tools in the request and the AI will intelligently decide when to call them, returning structured `tool_calls` in the response.
+## API behavior and limits
 
-### Defining Custom Tools
+- `POST /v1/chat/completions`: streaming/non-streaming text and validated function calls.
+- `POST /v1/completions`: legacy text completions through the same inference path.
+- `GET /v1/models`: supported static identifiers.
+- `GET /live`: HTTP process liveness.
+- `GET /health`: CLI executable readiness and credential presence. This does **not** validate token freshness, model access, credits, or upstream availability.
+- `POST /v1/embeddings`: explicitly unsupported (501).
 
-```python
-from openai import OpenAI
+Full supplied history is preserved, including system/developer messages and tool-call/result IDs. Inputs beyond the configured byte cap return 413; nothing is silently dropped. Non-text inputs, including images, return 400. Route vision and embeddings to another provider.
 
-client = OpenAI(
-    base_url="http://localhost:3000/v1",
-    api_key="your-secret-custom-key"
-)
+Tool calling is **prompt emulation**, not native inference tool calling. The model must return a complete JSON tool envelope, not prose containing a JSON example. Calls are checked against declared names and JSON Schemas. Multiple calls, `tool_choice` (auto/none/required/named), and `parallel_tool_calls: false` are supported. Model noncompliance returns a recognizable error rather than executing an invented function.
 
-response = client.chat.completions.create(
-    model="auto",
-    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}],
-    tools=[{
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get current weather for a city",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "city": {"type": "string", "description": "City name"}
-                },
-                "required": ["city"]
-            }
-        }
-    }]
-)
-```
+The CLI only provides coarse output budgets through this adapter: `max_tokens`/`max_completion_tokens` may be 16000 or 32000 (mapped to CLI 16k/32k presets). Other limits, temperature, response-format constraints, and unknown options return 400 rather than being ignored. Token usage is unavailable and is never fabricated. Confirm your Hermes configuration's outgoing request options; auxiliary tasks needing unsupported options should use another provider.
 
-### Tool Call Response Format
+Streaming emits normal text or indexed tool calls, normalized finish reasons, keepalives, and `[DONE]`. A failure after the stream opens arrives as an SSE `error` object; HTTP status cannot change after headers. CLI work is cancelled when the caller disconnects. Timeouts escalate SIGTERM to SIGKILL on Unix process groups. Windows process-tree termination is not validated; the supported deployment target is Linux Docker/macOS.
 
-When the AI decides to use a tool, you'll receive:
+## Configuration
 
-```json
-{
-  "choices": [{
-    "message": {
-      "role": "assistant",
-      "content": null,
-      "tool_calls": [{
-        "id": "call_abc123",
-        "type": "function",
-        "function": {
-          "name": "get_weather",
-          "arguments": "{\"city\": \"Tokyo\"}"
-        }
-      }]
-    },
-    "finish_reason": "tool_calls"
-  }]
-}
-```
+| Variable                      | Default        | Purpose                                                     |
+| ----------------------------- | -------------- | ----------------------------------------------------------- |
+| `PROXY_API_KEY`               | required       | Client Bearer secret; startup fails closed without it       |
+| `QODER_PERSONAL_ACCESS_TOKEN` | none           | Qoder PAT (legacy alias `QODER_API_KEY`)                    |
+| `HOST`                        | `127.0.0.1`    | Native bind address; image sets `0.0.0.0`                   |
+| `PORT`                        | `3000`         | Listening port                                              |
+| `QODERCLI_BIN`                | `qodercli`     | CLI executable path                                         |
+| `QODER_TIMEOUT_MS`            | `120000`       | Active inference deadline                                   |
+| `QODER_MAX_CONCURRENCY`       | `1`            | Concurrent CLI processes                                    |
+| `QODER_MAX_QUEUE`             | `8`            | Queued requests (0 disables queuing)                        |
+| `QODER_QUEUE_TIMEOUT_MS`      | `30000`        | Queue wait deadline                                         |
+| `QODER_MAX_OUTPUT_TOKENS`     | `16k`          | Default CLI output budget (`16k` or `32k`)                  |
+| `MAX_PROMPT_BYTES`            | `2097152`      | Serialized prompt cap                                       |
+| `MAX_OUTPUT_BYTES`            | `4194304`      | Combined stdout/stderr cap                                  |
+| `DASHBOARD_ENABLED`           | `true`         | Enable admin routes                                         |
+| `DASHBOARD_PASSWORD`          | none           | Required for dashboard login                                |
+| `SECURE_COOKIES`              | `false`        | Enable when serving dashboard over HTTPS                    |
+| `DASHBOARD_SECRET`            | generated      | Session signing key; sessions are revoked at restart        |
+| `PUBLIC_BASE_URL`             | browser origin | Optional canonical endpoint shown by dashboard              |
+| `CORS_ORIGIN`                 | disabled       | Explicit permitted browser origin, if needed                |
+| `LOG_PAYLOADS`                | `false`        | Opt-in request payload capture (may contain sensitive code) |
+| `LOG_MAX_ENTRIES`             | `500`          | Maximum entries per log buffer                              |
+| `LOG_BODY_MAX_BYTES`          | `8192`         | Per-payload UTF-8 byte cap                                  |
 
-### How It Works
+`ALLOW_UNAUTHENTICATED=true` explicitly permits a private, unauthenticated deployment. Do not enable it on an exposed listener. Numeric settings are validated at startup; negative values cannot disable resource limits.
 
-The proxy converts your OpenAI tool definitions into natural language instructions for Qoder's AI, then parses the model's response back into OpenAI's `tool_calls` format. This works with:
+## Dashboard
 
-- ✅ **LangChain** - Agent tool chains
-- ✅ **Any OpenAI SDK** - Standard function calling
-- ⚠️ **Cursor IDE / Continue.dev / Zed** - See known limitations below
+Visit `/dashboard/`, sign in, and use the endpoint reference, playground, request logs, and system logs. Dashboard chat uses session authentication; the browser never receives the API key. Sessions expire server-side, are revoked on logout/restart, and use HttpOnly/SameSite cookies. Login attempts are rate-limited. Content is escaped/rendered using DOM text APIs, with a restrictive CSP.
 
-Both streaming and non-streaming modes are fully supported!
+Logs are bounded and RAM-only. Payload capture is disabled by default. Memory statistics refer to the Node proxy, not its CLI child processes. Use Docker stats for total resource usage.
 
-## ⚠️ Limitations
+## Reading the code
 
-- **Embeddings**: Qoder does not support embeddings. Calling `/v1/embeddings` returns a `501 Not Implemented`.
-- **Token usage**: Token counting is not available—`usage` fields in responses return `null`.
-- **Tool execution**: The proxy returns tool call requests in OpenAI format, but doesn't automatically execute them. Your application must handle tool execution and send results back (standard OpenAI tool calling flow).
+1. `src/server.ts`: Express setup, auth boundaries, startup/shutdown.
+2. `src/routes/chat.ts`: shared request validation and JSON/SSE protocol.
+3. `src/helpers/format.ts`: lossless history, model IDs, normalized responses.
+4. `src/helpers/toolPrompt.ts`: tool instructions, JSON parsing, schema validation.
+5. `src/helpers/spawn.ts`: admission queue, stdin, isolated subprocesses, output events and cancellation.
+6. `src/middleware/`: Bearer auth, dashboard sessions and telemetry.
+7. `src/store/logStore.ts`: bounded log buffers.
+8. `src/dashboard/public/app.ts`: browser UI; static HTML/CSS accompany it.
 
-### ❌ Known Limitation — Coding IDEs Not Yet Supported
+## Verification
 
-The following tools have been tested and are **not currently compatible** with this proxy:
+Tests were committed before implementation. The original 33-test contract baseline had **30 failures and 3 passes** at commit `c49b2ce`. The suite exercises real HTTP servers and subprocesses with a deterministic fake CLI, plus pure validation and lifecycle tests. Later runtime prerequisites were also recorded as failing tests before their fixes.
 
-| Tool | Status | Reason |
-|---|---|---|
-| **Cursor IDE** | ❌ Not working | IDE-specific handshake / protocol extensions not supported |
-| **Zed Editor** | ❌ Not working | IDE-specific handshake / protocol extensions not supported |
-| **Continue.dev** | ❌ Not working | IDE-specific handshake / protocol extensions not supported |
+These tests do not call paid models or prove production quality for every Qoder model. Live Hermes acceptance requires your PAT and installed Hermes configuration. CLI and upstream behavior can change; test upgrades before updating the pinned version.
 
-This is a known, unresolved limitation. A patch has not been implemented yet. If you need AI assistance inside your editor, use Qoder's native extensions where available.
-
-## ✅ Verified Compatible
-
-The proxy has been tested and works with:
-
-- ✅ **OpenAI Python SDK** - All standard features
-- ✅ **LangChain** - Agent chains and tool calling
-- ✅ **Open WebUI** - Chat interface integration
-- ❌ **Cursor IDE** - Not working (see known limitations above)
-- ❌ **Zed Editor** - Not working (see known limitations above)
-- ❌ **Continue.dev** - Not working (see known limitations above)
-
-## License
-MIT
+CI runs tests before publishing AMD64/ARM64 images into the fork's own GHCR namespace. MIT license; retain the existing notice.

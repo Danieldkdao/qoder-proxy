@@ -6,10 +6,12 @@
   "scripts": {
     "build": "node scripts/build.mts",
     "start": "node dist/server.js",
-    "dev": "npm run build && node --watch dist/server.js",
+    "dev": "npm run build && concurrently -k \"tsc -p tsconfig.json --watch\" \"tsc -p tsconfig.browser.json --watch\" \"node --watch dist/server.js\"",
     "test": "npm run build && vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.browser.json --noEmit"
+    "test:watch": "npm run build && concurrently -k \"tsc -p tsconfig.json --watch\" \"tsc -p tsconfig.browser.json --watch\" \"vitest\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.browser.json --noEmit && tsc -p tsconfig.test.json",
+    "format": "prettier --write \"src/**/*.{ts,html,css}\" \"test/**/*.ts\" \"scripts/*.mts\" \"*.json\" \"*.md\" \".github/**/*.{md,yml}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css}\" \"test/**/*.ts\" \"scripts/*.mts\" \"*.json\" \"*.md\" \".github/**/*.{md,yml}\""
   },
   "keywords": [
     "qoder",
@@ -32,7 +34,9 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.25",
-    "@types/node": "^26.6.6",
+    "@types/node": "^24.19.2",
+    "concurrently": "^10.0.6",
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   },
