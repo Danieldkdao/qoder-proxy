@@ -91,7 +91,12 @@ function terminate(child: ChildProcess, signal: NodeJS.Signals): void {
 export function shutdown(): void {
   for (const waiter of [...admission.queue])
     waiter.reject(new ProxyError("Server shutting down", 503, "unavailable"));
-  for (const child of children) terminate(child, "SIGTERM");
+  for (const child of children) {
+    terminate(child, "SIGTERM");
+    const timer = setTimeout(() => terminate(child, "SIGKILL"), 250);
+    timer.unref();
+    child.once("close", () => clearTimeout(timer));
+  }
 }
 function childEnvironment(home?: string): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {

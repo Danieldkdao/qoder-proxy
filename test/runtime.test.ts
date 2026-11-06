@@ -82,12 +82,20 @@ describe("runtime supervision and CLI isolation", () => {
     }
   });
   it("terminates uncooperative CLI processes during server shutdown", async () => {
-    config.QODERCLI_BIN = binary("process.on('SIGTERM',()=>{});setInterval(()=>{},1000)");
+    config.QODERCLI_BIN = binary(
+      "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)",
+    );
     config.QODER_TIMEOUT_MS = 1500;
-    const pending = runner.runQoder("hello", "auto").then(() => "completed", () => "cancelled");
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const pending = runner.runQoder("hello", "auto").then(
+      () => "completed",
+      () => "cancelled",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
     runner.shutdown();
-    const result = await Promise.race([pending, new Promise(resolve => setTimeout(() => resolve("still-running"), 700))]);
+    const result = await Promise.race([
+      pending,
+      new Promise((resolve) => setTimeout(() => resolve("still-running"), 700)),
+    ]);
     await pending;
     expect(result).toBe("cancelled");
     expect(runner.processStats().active).toBe(0);
