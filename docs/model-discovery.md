@@ -14,9 +14,9 @@ The optional Environment settings are `QODER_MODEL_CACHE_TTL_MS`, `QODER_MODEL_C
 
 ## Mini gateway to Air Desktop
 
-Your Desktop connection reaches the Hermes gateway on the Mini. Configure the provider in that remote profile, using the Mini's loopback URL. The Qoder provider is named **Qoder Proxy**, with slug `qoder`, API mode `chat_completions`, default model `auto`, discovery enabled and a 64000-token client context limit. Existing default provider selections are preserved.
+Your Desktop connection reaches the Hermes gateway on the Mini. Configure the provider in that remote profile, using the Mini's loopback URL. The Qoder provider is named **Qoder Proxy**, with slug `qoder`, API mode `chat_completions`, default model `Auto`, discovery enabled and a 64000-token client context limit. Existing default provider selections are preserved.
 
-The Mini's installed default, coder, researcher, reviewer and troubleshooter profiles have this provider. In Desktop, select the **Mini remote gateway**, select the desired profile, open the chat's model picker, choose **Refresh models**, then choose **Qoder Proxy → auto** or another discovered ID. Old existing sessions may retain their previous provider until switched; start a new chat to test the selected model.
+The Mini's installed default, coder, researcher, reviewer and troubleshooter profiles have this provider. In Desktop, select the **Mini remote gateway**, select the desired profile, open the chat's model picker, choose **Refresh models**, then choose **Qoder Proxy → Auto** or another discovered ID. Old existing sessions may retain their previous provider until switched; start a new chat to test the selected model.
 
 The gateway authenticates with a `key_cmd` pointing to the private installed helper, conceptually:
 
@@ -24,9 +24,9 @@ The gateway authenticates with a `key_cmd` pointing to the private installed hel
 providers:
   qoder:
     name: Qoder Proxy
-    api: http://127.0.0.1:17843/v1
+    api: http://127.0.0.1:17843/hermes/v1
     transport: chat_completions
-    default_model: auto
+    default_model: Auto
     discover_models: true
     context_length: 64000
     key_cmd: >-
@@ -61,3 +61,5 @@ The MacBook Air's visible Desktop UI was not directly operated. Its Mini gateway
 The current Hermes Desktop picker derives visible names from model IDs and ignores the generic OpenAI `name` field. The proxy therefore exposes a second authenticated catalog at `/hermes/v1/models` whose IDs are the account's current Qoder display names. Configure Hermes's Qoder provider with `http://127.0.0.1:17843/hermes/v1` and default model `Auto`. Select **Refresh models** after updating. The proxy resolves each exact display name against the live catalog and invokes the CLI with its canonical Qoder ID; responses retain the selected display name. Canonical IDs are still accepted on this endpoint, and `/v1` continues advertising canonical IDs for other clients. Unknown or ambiguous names are rejected. Name changes follow live Qoder discovery rather than a handwritten mapping.
 
 Qoder's Auto, Ultimate, Fast and Efficient entries are routing tiers, so no fixed underlying model can be inferred from those labels. Sonus and Cantus are Qoder's own published names for `smodel` and `cmodel`; the catalog does not disclose a different underlying vendor/model identity for them.
+
+Friendly-name verification on November 6, 2026: 78 Vitest tests, three Docker isolation tests, strict TypeScript and formatting checks passed. The running Mini gateway's `model.options` response contains all 15 live display names, including Sonus and Cantus. A real session selecting provider `qoder` and model `Auto` completed the terminal proof-file roundtrip through the deployed image. The Air UI itself was not directly operated; refresh the model picker on the Mini remote connection to see the new names.
