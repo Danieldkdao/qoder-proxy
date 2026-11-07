@@ -78,6 +78,11 @@ function emit(prompt: string) {
         '{"tool_call":{"name":"terminal","arguments":{"command":"pwd"}}}';
   }
   const text =
+    (prompt.includes("REPORT_TOOL_CHOICE")
+      ? prompt.includes('Tool choice: "none"')
+        ? "CHOICE=none"
+        : "CHOICE=missing"
+      : "") ||
     (prompt.includes("REPORT_EFFORT")
       ? args.includes("--thinking")
         ? "THINKING=" + args[args.indexOf("--thinking") + 1]
@@ -87,11 +92,13 @@ function emit(prompt: string) {
       ? "CLI_MODEL=" + args[args.indexOf("--model") + 1]
       : "") ||
     workflow ||
-    (prompt.includes("RETURN_TOOL")
-      ? '{"tool_call":{"name":"terminal","arguments":{"command":"pwd"}}}'
-      : prompt.includes("UNICODE")
-        ? "🙂"
-        : "FINAL_ANSWER");
+    (prompt.includes("RETURN_FENCED_TOOL")
+      ? '```json\n{"tool_calls":[{"name":"terminal","arguments":{"command":"pwd"}}]}\n```'
+      : prompt.includes("RETURN_TOOL")
+        ? '{"tool_call":{"name":"terminal","arguments":{"command":"pwd"}}}'
+        : prompt.includes("UNICODE")
+          ? "🙂"
+          : "FINAL_ANSWER");
   const bytes = Buffer.from(
     JSON.stringify({
       type: "assistant",

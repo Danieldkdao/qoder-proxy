@@ -164,8 +164,12 @@ let server: ChildProcess;
 let base: string;
 let dir: string;
 let logs = "";
-async function request(body: unknown, headers: Record<string, string> = {}) {
-  return fetch(base + "/v1/chat/completions", {
+async function request(
+  body: unknown,
+  headers: Record<string, string> = {},
+  prefix = "/v1",
+) {
+  return fetch(base + prefix + "/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -645,4 +649,60 @@ describe("build and dashboard contracts", () => {
       "<img",
     );
   });
+});
+
+describe("fenced model tool-call HTTP transport", () => {
+  for (const prefix of ["/v1", "/hermes/v1"])
+    for (const stream of [false, true]) {
+      it(`forwards a complete fenced call through ${prefix} with stream=${stream}`, async () => {
+        const response = await request(
+          {
+            model: prefix === "/hermes/v1" ? "Auto" : "auto",
+            messages: [{ role: "user", content: "RETURN_FENCED_TOOL" }],
+            tools,
+            tool_choice: "required",
+            stream,
+          },
+          {},
+          prefix,
+        );
+        expect(response.status).toBe(200);
+        if (stream) {
+          const chunks = events(await response.text());
+          const call = chunks.flatMap(
+            (chunk) => chunk.choices?.[0]?.delta?.tool_calls ?? [],
+          )[0];
+          expect(call?.function).toEqual({
+            name: "terminal",
+            arguments: '{"command":"pwd"}',
+          });
+          expect(
+            chunks.some(
+              (chunk) => chunk.choices?.[0]?.finish_reason === "tool_calls",
+            ),
+          ).toBe(true);
+          expect(chunks.some((chunk) => chunk.error)).toBe(false);
+        } else {
+          const body = await response.json();
+          expect(body.choices[0].message.tool_calls[0].function).toEqual({
+            name: "terminal",
+            arguments: '{"command":"pwd"}',
+          });
+          expect(body.choices[0].finish_reason).toBe("tool_calls");
+        }
+      });
+    }
+});
+
+it("delivers an explicit none decision to the CLI instead of dropping it", async () => {
+  const response = await request({
+    model: "auto",
+    messages: [{ role: "user", content: "REPORT_TOOL_CHOICE" }],
+    tools,
+    tool_choice: "none",
+  });
+  expect(response.status).toBe(200);
+  expect((await response.json()).choices[0].message.content).toBe(
+    "CHOICE=none",
+  );
 });

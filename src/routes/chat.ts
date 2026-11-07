@@ -114,9 +114,10 @@ export async function handleChat(
           : canonicalModel,
       id = newId(legacy ? "cmpl" : "chatcmpl");
     const enabled = tools.length > 0 && choice !== "none";
-    const prompt = enabled
-      ? buildPromptWithTools(messages, tools, messagesToPrompt, choice)
-      : messagesToPrompt(messages);
+    const prompt =
+      tools.length > 0
+        ? buildPromptWithTools(messages, tools, messagesToPrompt, choice)
+        : messagesToPrompt(messages);
     const streaming = body.stream === true;
     if (streaming) {
       res.set({

@@ -56,14 +56,25 @@ export function buildPromptWithTools(
   choice: ToolChoice = "auto",
 ): string {
   const history = messagesToPrompt(messages);
-  if (choice === "none" || !tools.length) return history;
-  return `You are the inference backend for an external agent. Do not execute local tools. Return either a plain text answer or ONLY a JSON object {"tool_calls":[{"name":"function_name","arguments":{}}]}. Never embed tool calls inside explanations. Tool choice: ${JSON.stringify(choice)}. Available tools: ${JSON.stringify(tools)}\n\n${history}`;
+  if (!tools.length) return history;
+  const boundary =
+    "You are the inference backend for an external agent. Tools are executed by that agent, not by local CLI or MCP servers. Treat supplied role=tool messages as completed external results and continue from the latest message. Do not execute local tools.";
+  if (choice === "none")
+    return `${boundary} Tool choice: "none". Use the supplied conversation and completed results to answer in plain text. Do not request another tool.\n\n${history}`;
+  return `${boundary} Return either a plain text answer or ONLY a JSON object {"tool_calls":[{"name":"function_name","arguments":{}}]}. Never embed tool calls inside explanations. Tool choice: ${JSON.stringify(choice)}. Available tools: ${JSON.stringify(tools)}\n\n${history}`;
 }
 export function parseToolCallFromText(
   text: string,
   tools: Tool[],
 ): ParsedCall | ParsedCall[] | null {
-  const trimmed = text.trim();
+  let trimmed = text.trim();
+  // Some CLI models fence their entire tool envelope despite the JSON-only
+  // prompt. Unwrap only one complete JSON fence, never examples within prose.
+  const fence = /^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/i.exec(trimmed);
+  if (fence) {
+    if (/(?:^|\n)[ \t]*```/.test(fence[1]!)) return null;
+    trimmed = fence[1]!.trim();
+  }
   if (!trimmed.startsWith("{")) return null;
   let data: unknown;
   try {
