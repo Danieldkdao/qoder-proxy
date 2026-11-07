@@ -1,3 +1,4 @@
+if(process.argv.includes("--list-models")) {console.log("MODEL\nAuto\nNext Generation\n");process.exit(0);}
 const args = process.argv.slice(2);
 if (args.includes("--version") || args.includes("--help")) {
   console.log("1.0.0-test");

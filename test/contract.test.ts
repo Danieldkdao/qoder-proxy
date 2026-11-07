@@ -101,10 +101,6 @@ describe("conversation integrity contract", () => {
       ]),
     ).toThrow(/image|unsupported/i);
   });
-  it("rejects unknown model identifiers and prototype names", () => {
-    for (const name of ["not-a-model", "constructor", "__proto__"])
-      expect(() => format.getModelMapping(name)).toThrow();
-  });
   it("serializes native tool arguments as JSON strings", () => {
     const result = format.extractToolCalls([
       {
@@ -205,7 +201,7 @@ beforeAll(async () => {
     });
   });
   base = `http://127.0.0.1:${port}`;
-  server = spawn(process.execPath, [resolve(source, "server.js")], {
+  server = spawn(process.execPath, ["--import", resolve("test/catalog-preload.fixture.ts"), resolve(source, "server.js")], {
     env: {
       ...process.env,
       PORT: String(port),
@@ -496,6 +492,18 @@ describe("HTTP / Hermes provider contract", () => {
         })
       ).status,
     ).toBe(401);
+  });
+  it("discovers CLI-compatible live models for Desktop and accepts the discovered ID in chat", async () => {
+    const response = await fetch(base + "/v1/models", {headers:{Authorization:"Bearer test-key"}});
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const body=await response.json();
+    expect(body.object).toBe("list");
+    expect(body.data.map((m:any)=>m.id)).toEqual(["auto","next_generation"]);
+    const completion=await request({model:"next_generation",messages});
+    expect(completion.status).toBe(200);
+    expect((await completion.json()).model).toBe("next_generation");
+    for(const model of ["api_only","constructor","__proto__","not-a-model"])expect((await request({model,messages})).status).toBe(400);
   });
   it("does not advertise misleading OpenAI and Claude model aliases", async () => {
     const response = await fetch(base + "/v1/models", {

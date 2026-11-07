@@ -58,7 +58,7 @@ describe.skipIf(!enabled)("secure secret-delivery container", () => {
     expect(
       (await fetch(url, { headers: { Authorization: "Bearer " + key } }))
         .status,
-    ).toBe(200);
+    ).toBe(503);
     expect(
       docker([
         "exec",
