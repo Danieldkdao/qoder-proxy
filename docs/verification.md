@@ -34,9 +34,13 @@ Tool calling remains model-dependent prompt emulation. Unsupported parameters an
 
 The 1Password-only deployment was developed from failing tests in `c9229dc`. Physical dotenv loading was removed. Every public npm command uses the supplied Environment ID; CI uses secret-free internal tasks.
 
-- 49 standard Vitest tests pass; three additional Docker integration tests pass when explicitly enabled.
+- 51 standard Vitest tests pass; three additional Docker integration tests pass when explicitly enabled.
 - The read-only, non-root Docker container authenticates with stdin-injected credentials. Synthetic secrets are absent from saved Docker metadata, container logs and new exec environments.
 - The actual installed Hermes CLI completed a tool-call/result/final-answer exchange against a fixture-backed Docker proxy. A temporary proof file confirmed actual Hermes terminal execution. Profile cleanup was also verified.
 - The production target was confirmed to be the Mac Mini.
 
 Fixture-backed checks do not authenticate to Qoder or spend credits. Live-account acceptance is recorded separately once 1Password authorization and the real PAT have been verified.
+
+### Live acceptance on the Mac Mini
+
+The supplied 1Password Environment authorized successfully. The production container started through the stdin bootstrap. An authenticated real-Qoder function-call/result/final-answer test passed, followed by a real Hermes terminal-tool acceptance test with a verified temporary proof file. No raw credential values were displayed. Production inspection confirmed a non-root user, read-only filesystem, loopback-only publication, restart policy `no`, and no saved credential keys in Docker Config.Env. An initial Hermes acceptance attempt did not pass; a later attempt completed successfully. Tool adherence remains model-dependent, and redacted diagnostics now identify known failure categories without printing raw subprocess output.

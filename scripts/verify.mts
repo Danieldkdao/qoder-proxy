@@ -127,19 +127,47 @@ async function proxyCheck(): Promise<void> {
 function shellQuote(value: string): string {
   return "'" + value.replaceAll("'", "'\\''") + "'";
 }
+export function failureDiagnostic(output: string, code: unknown) {
+  return {
+    errorCode:
+      typeof code === "string" && /^E[A-Z]+$/.test(code)
+        ? code
+        : "acceptance_failure",
+    outputBudgetRejected: output.includes("Only max_tokens 16000 or 32000"),
+    unsupportedParameters: [
+      ...output.matchAll(/Unsupported request option: ([a-z_]{1,64})/g),
+    ].map((match) => match[1]),
+    invalidToolCall:
+      /invalid_tool_call|Invalid arguments for|Malformed tool call/.test(
+        output,
+      ),
+    malformedHistory:
+      /Invalid message role|Tool result must match|Null content is only/.test(
+        output,
+      ),
+    timedOut: /timed out|timeout_error/.test(output),
+    authenticationRejected: /invalid_api_key|HTTP 401|Error code: 401/.test(
+      output,
+    ),
+    outputBytes: Buffer.byteLength(output),
+  };
+}
 export async function verifyTask(task: string): Promise<void> {
   if (task === "proxy:check") {
     await proxyCheck();
     return;
   }
   const interactive = task === "hermes:chat";
+  const configureOnly = task === "hermes:configure";
+  const persistent = interactive || configureOnly;
   const directory = await mkdtemp(join(tmpdir(), "hermes-qoder-acceptance-"));
-  const profile = interactive
+  const profile = persistent
     ? process.env.QODER_HERMES_HOME || join(homedir(), ".hermes-qoder-proxy")
     : join(directory, "profile");
   const model = process.env.QODER_HERMES_MODEL || "auto",
     base = endpoint(),
-    key = credential();
+    key = configureOnly ? "" : credential();
+  let capturedOutput = "";
   try {
     await mkdir(profile, { recursive: true, mode: 0o700 });
     const file = join(profile, "config.yaml");
@@ -152,7 +180,7 @@ export async function verifyTask(task: string): Promise<void> {
         context_length: 64000,
       },
       agent: {
-        max_turns: interactive ? 30 : 4,
+        max_turns: persistent ? 30 : 4,
         reasoning_effort: false,
         api_max_retries: 1,
         auto_recovery_cycles: 0,
@@ -161,12 +189,12 @@ export async function verifyTask(task: string): Promise<void> {
       memory: { enabled: false },
       terminal: {
         backend: "local",
-        cwd: interactive ? process.cwd() : directory,
+        cwd: persistent ? "." : directory,
         env_passthrough: [],
         client_env_passthrough: [],
       },
     };
-    if (!interactive)
+    if (!persistent)
       await writeFile(file, JSON.stringify(config, null, 2), { mode: 0o600 });
     else {
       try {
@@ -174,6 +202,12 @@ export async function verifyTask(task: string): Promise<void> {
       } catch {
         await writeFile(file, JSON.stringify(config, null, 2), { mode: 0o600 });
       }
+    }
+    if (configureOnly) {
+      console.log(
+        `Configured non-secret Hermes profile at ${file}; credentials remain environment references.`,
+      );
+      return;
     }
     const env: NodeJS.ProcessEnv = {
       HERMES_HOME: profile,
@@ -220,7 +254,11 @@ export async function verifyTask(task: string): Promise<void> {
         prompt,
       ],
       { cwd: directory, env, timeout: 300000, maxBuffer: 1024 * 1024 },
-    );
+    ).catch((error: { stdout?: string; stderr?: string }) => {
+      capturedOutput = (error.stdout ?? "") + (error.stderr ?? "");
+      throw error;
+    });
+    capturedOutput = result.stdout + result.stderr;
     const written = await readFile(proof, "utf8");
     if (written !== nonce || !result.stdout.includes(nonce))
       throw Error(
@@ -229,9 +267,12 @@ export async function verifyTask(task: string): Promise<void> {
     console.log(
       "PASS: real Hermes → proxy → Qoder → real terminal tool → verified temporary file → final answer.",
     );
-  } catch {
+  } catch (error) {
     throw Error(
-      "Hermes acceptance failed. Verify the proxy, supported model and installed Hermes CLI. Credentials and raw subprocess output were not printed.",
+      "Hermes acceptance failed: " +
+        JSON.stringify(
+          failureDiagnostic(capturedOutput, (error as { code?: unknown }).code),
+        ),
     );
   } finally {
     await rm(directory, {

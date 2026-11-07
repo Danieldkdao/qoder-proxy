@@ -103,13 +103,22 @@ async function main(): Promise<void> {
     case "proxy:check":
     case "hermes:test":
     case "hermes:chat":
+    case "hermes:configure":
       await (await import("./verify.mts")).verifyTask(task);
       break;
     default:
       throw Error("Unknown task");
   }
 }
-void main().catch(() => {
+void main().catch((error: unknown) => {
+  if (
+    error instanceof Error &&
+    error.message.startsWith("Hermes acceptance failed: ")
+  ) {
+    console.error(error.message);
+    process.exitCode = 1;
+    return;
+  }
   console.error(
     "Task failed. Check the non-secret configuration and 1Password authorization; do not print credentials.",
   );

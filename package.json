@@ -20,7 +20,8 @@
     "proxy:check": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts proxy:check",
     "hermes:test": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:test",
     "hermes:chat": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:chat",
-    "test:docker": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts test:docker"
+    "test:docker": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts test:docker",
+    "hermes:configure": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:configure"
   },
   "keywords": [
     "qoder",

@@ -115,4 +115,44 @@ describe("1Password runtime-only secret delivery", () => {
       expect(result.stdout + result.stderr).not.toContain("DO_NOT_ECHO");
     }
   });
+  it("exposes only allowlisted diagnostics when Hermes fails", async () => {
+    const { failureDiagnostic } = await import("../scripts/verify.mts");
+    const diagnostic = failureDiagnostic(
+      "HTTP 400 Only max_tokens 16000 or 32000 is supported by the CLI Authorization: PRIVATE_KEY",
+      "ENOENT",
+    );
+    expect(diagnostic).toMatchObject({
+      outputBudgetRejected: true,
+      errorCode: "ENOENT",
+    });
+    expect(JSON.stringify(diagnostic)).not.toContain("PRIVATE_KEY");
+  });
+  it("configures a persistent Hermes profile without reading or saving a credential", async () => {
+    const { verifyTask } = await import("../scripts/verify.mts");
+    const dir = mkdtempSync(join(tmpdir(), "hermes-profile-config-"));
+    const oldHome = process.env.QODER_HERMES_HOME,
+      oldKey = process.env.PROXY_API_KEY;
+    process.env.QODER_HERMES_HOME = dir;
+    delete process.env.PROXY_API_KEY;
+    try {
+      await verifyTask("hermes:configure");
+      const path = join(dir, "config.yaml");
+      const config = JSON.parse(readFileSync(path, "utf8"));
+      expect(config.model).toMatchObject({
+        provider: "custom",
+        key_env: "PROXY_API_KEY",
+        base_url: "http://127.0.0.1:3000/v1",
+      });
+      expect(config.model.api_key).toBeUndefined();
+      writeFileSync(path, '{"userSetting":true}');
+      await verifyTask("hermes:configure");
+      expect(readFileSync(path, "utf8")).toBe('{"userSetting":true}');
+    } finally {
+      if (oldHome === undefined) delete process.env.QODER_HERMES_HOME;
+      else process.env.QODER_HERMES_HOME = oldHome;
+      if (oldKey === undefined) delete process.env.PROXY_API_KEY;
+      else process.env.PROXY_API_KEY = oldKey;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

@@ -64,6 +64,12 @@ This launches the **installed Hermes CLI** with an isolated temporary profile. H
 
 The test uses Hermes's one-shot mode, which auto-approves tools. Its prompt is fixed to creating and reading that temporary proof file. It does not run the test in your project checkout. The acceptance profile receives only the proxy API key; it does not receive the Qoder PAT or 1Password service-account token.
 
+The separate non-secret profile is already configured on this Mini. To prepare it explicitly on another checkout:
+
+```sh
+npm run hermes:configure
+```
+
 For normal chat:
 
 ```sh
