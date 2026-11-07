@@ -1,20 +1,33 @@
 import { Router, type Request, type Response } from "express";
 import config from "../config";
 import { checkQoderCli, processStats } from "../helpers/spawn";
-import { QODER_MODELS } from "../helpers/format";
+import { modelCatalog } from "../helpers/modelCatalog";
 export const miscRouter = Router();
-miscRouter.get("/models", (_req, res) =>
-  res.json({
-    object: "list",
-    data: QODER_MODELS.map((m) => ({
-      id: m.id,
-      object: "model",
-      created: 1700000000,
-      owned_by: "qoder",
-      qoder: { ...m, is_alias: false },
-    })),
-  }),
-);
+miscRouter.get("/models", (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  modelCatalog
+    .get(true)
+    .then((catalog) => {
+      res.set("X-Qoder-Model-Cache", catalog.stale ? "stale" : "fresh");
+      res.json({
+        object: "list",
+        data: catalog.models.map((model) => ({
+          id: model.id,
+          object: "model",
+          created: Math.floor(catalog.fetchedAt / 1000),
+          owned_by: "qoder",
+          name: model.label,
+          supports_vision: false,
+          supports_reasoning: false,
+          ...(model.context_length
+            ? { context_length: model.context_length }
+            : {}),
+          qoder: { ...model, source: "account-api-and-cli", is_alias: false },
+        })),
+      });
+    })
+    .catch(next);
+});
 miscRouter.post("/embeddings", (_req, res) =>
   res.status(501).json({
     error: {

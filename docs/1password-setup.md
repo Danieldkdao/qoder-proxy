@@ -192,3 +192,15 @@ These values affect the local task runner. They are **not** forwarded into the p
 | `OP_SERVICE_ACCOUNT_TOKEN` | Optional 1Password host authentication credential for deliberately configured unattended use. Not needed with desktop integration. Never passed to Docker or Hermes, never committed, never stored inside the Environment it is intended to unlock. |
 
 Positive numeric limits are validated on server startup. A typo causes a startup failure rather than silently disabling a limit. Start with the defaults, confirm `proxy:check` and `hermes:test`, then tune one variable at a time.
+
+## Live catalog and Hermes Desktop remote gateway
+
+See [model discovery](model-discovery.md). A Desktop app on the Air connected to the Mini's gateway uses the Mini's loopback endpoint, `http://127.0.0.1:17843/v1`; no extra proxy tunnel is needed. The gateway's named `qoder` provider can use the installed private `scripts/hermes-credential.mts` as `key_cmd`, so no Qoder credential is pasted into Desktop or saved in its provider config.
+
+| Variable                           | Default   | Meaning                                                                                                                        |
+| ---------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `QODER_MODEL_CACHE_TTL_MS`         | `300000`  | Fresh catalog lifetime (5 minutes). Range 1000–86400000 ms.                                                                    |
+| `QODER_MODEL_CACHE_STALE_MS`       | `1800000` | Maximum total catalog age eligible for stale use (30 minutes), including the fresh lifetime. Must be at least TTL; same range. |
+| `QODER_MODEL_DISCOVERY_TIMEOUT_MS` | `15000`   | Timeout for each API request and CLI listing. Range 1000–120000 ms. Discovery failures back off for 30 seconds.                |
+
+These optional settings are allowlisted for secure Docker injection. Changing them requires recreating the container. The catalog is held in process memory and is cleared by a restart.

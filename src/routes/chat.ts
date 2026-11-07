@@ -6,7 +6,6 @@ import {
   buildDoneChunk,
   buildFullChatResponse,
   buildStreamChunk,
-  getModelMapping,
   messagesToPrompt,
   newId,
   validateMessages,
@@ -18,6 +17,7 @@ import {
   validateChoice,
   validateTools,
 } from "../helpers/toolPrompt";
+import { modelCatalog } from "../helpers/modelCatalog";
 import { runQoder } from "../helpers/spawn";
 const accepted = new Set([
   "messages",
@@ -99,7 +99,7 @@ export async function handleChat(
     const messages = validateMessages(body.messages),
       tools = validateTools(body.tools),
       choice = validateChoice(body.tool_choice, tools);
-    const model = getModelMapping(body.model),
+    const model = await modelCatalog.resolve(body.model),
       id = newId(legacy ? "cmpl" : "chatcmpl");
     const enabled = tools.length > 0 && choice !== "none";
     const prompt = enabled

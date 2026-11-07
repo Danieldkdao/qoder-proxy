@@ -48,6 +48,31 @@ describe("runtime supervision and CLI isolation", () => {
     );
     expect(await runner.checkQoderCli()).toBe("1.0-isolated");
   });
+  it("isolates discovery from project settings and unrelated credentials", async () => {
+    config.QODERCLI_BIN = binary(
+      "console.log(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,key:process.env.PROXY_API_KEY||null,args:process.argv.slice(2)}))",
+    );
+    process.env.PROXY_API_KEY = "PRIVATE_DISCOVERY_KEY";
+    try {
+      const result = JSON.parse(await runner.listCliModels());
+      expect(result.cwd).toBe(result.home);
+      expect(result.cwd).not.toBe(process.cwd());
+      expect(result.key).toBeNull();
+      expect(result.args).toEqual(["--list-models"]);
+    } finally {
+      delete process.env.PROXY_API_KEY;
+    }
+  });
+  it("classifies observed CLI authentication failures without retaining raw diagnostics", async () => {
+    config.QODERCLI_BIN = binary(
+      "process.stderr.write('401 PRIVATE_PAT');process.exit(1)",
+    );
+    await expect(runner.listCliModels()).rejects.toMatchObject({
+      status: 503,
+      authenticationRejected: true,
+      message: "CLI model discovery failed",
+    });
+  });
   it("kills a process which ignores SIGTERM at timeout", async () => {
     config.QODERCLI_BIN = binary(
       "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)",

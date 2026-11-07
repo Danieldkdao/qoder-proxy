@@ -3,58 +3,6 @@ import { ProxyError } from "../errors";
 import type { Message, ToolCall } from "../types";
 export const newId = (prefix: string): string =>
   `${prefix}-${randomUUID().replaceAll("-", "")}`;
-export const QODER_MODELS = [
-  {
-    id: "auto",
-    label: "Auto",
-    tier: "paid",
-    description: "Qoder automatic selection",
-  },
-  {
-    id: "ultimate",
-    label: "Ultimate",
-    tier: "paid",
-    description: "Qoder ultimate tier",
-  },
-  {
-    id: "performance",
-    label: "Performance",
-    tier: "paid",
-    description: "Qoder performance tier",
-  },
-  ...["qmodel", "kmodel", "mmodel", "dmodel", "dfmodel", "gm51model"].map(
-    (id) => ({
-      id,
-      label: id,
-      tier: "new",
-      description:
-        "Qoder model identifier; availability depends on CLI and account",
-    }),
-  ),
-];
-const aliases: Record<string, string> = {
-  qwen: "qmodel",
-  kimi: "kmodel",
-  minimax: "mmodel",
-  deepseek: "dmodel",
-  "deepseek-v4": "dmodel",
-  "deepseek-v4-flash": "dfmodel",
-  glm: "gm51model",
-  glm51: "gm51model",
-  qwen36plus: "qmodel",
-};
-export function getModelMapping(requested: unknown): string {
-  if (requested === undefined) return "auto";
-  if (typeof requested !== "string" || !requested)
-    throw new ProxyError("model must be a non-empty string");
-  if (QODER_MODELS.some((m) => m.id === requested)) return requested;
-  if (Object.hasOwn(aliases, requested)) return aliases[requested]!;
-  throw new ProxyError(
-    `Unknown model: ${requested}. Use a supported Qoder ID from /v1/models.`,
-    400,
-    "model_not_found",
-  );
-}
 function textContent(content: unknown): string | null {
   if (content === null) return null;
   if (typeof content === "string") return content;

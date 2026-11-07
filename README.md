@@ -47,13 +47,13 @@ Key:   your PROXY_API_KEY
 Model: auto
 ```
 
-Use actual Qoder identifiers. `/v1/models` is a static convenience catalog, not account-scoped discovery. Availability depends on your CLI/account. Native IDs include `auto`, `ultimate`, `performance`, `qmodel`, `kmodel`, `mmodel`, `dmodel`, `dfmodel`, `gm51model`. Friendly aliases such as `qwen` and `deepseek` resolve explicitly. Unknown IDs are rejected; GPT/Claude names are not advertised as models.
+Use exact IDs from `/v1/models`. The proxy discovers your account catalog from Qoder and intersects it with the installed CLI's `--list-models` output. It caches results, refreshes expired catalogs in the background for model pickers, and validates chat requests against the same catalog. Historical aliases and retired IDs are not guessed or advertised. See [live discovery and Hermes Desktop](docs/model-discovery.md).
 
 ## API behavior and limits
 
 - `POST /v1/chat/completions`: streaming/non-streaming text and validated function calls.
 - `POST /v1/completions`: legacy text completions through the same inference path.
-- `GET /v1/models`: supported static identifiers.
+- `GET /v1/models`: live account/CLI-compatible OpenAI-format catalog; `X-Qoder-Model-Cache` reports `fresh` or `stale`.
 - `GET /live`: HTTP process liveness.
 - `GET /health`: CLI executable readiness and credential presence. This does **not** validate token freshness, model access, credits, or upstream availability.
 - `POST /v1/embeddings`: explicitly unsupported (501).
@@ -104,7 +104,7 @@ Logs are bounded and RAM-only. Payload capture is disabled by default. Memory st
 
 1. `src/server.ts`: Express setup, auth boundaries, startup/shutdown.
 2. `src/routes/chat.ts`: shared request validation and JSON/SSE protocol.
-3. `src/helpers/format.ts`: lossless history, model IDs, normalized responses.
+3. `src/helpers/format.ts`: lossless history and normalized responses. `src/helpers/modelCatalog.ts`: account discovery, CLI compatibility, cache and model validation.
 4. `src/helpers/toolPrompt.ts`: tool instructions, JSON parsing, schema validation.
 5. `src/helpers/spawn.ts`: admission queue, stdin, isolated subprocesses, output events and cancellation.
 6. `src/middleware/`: Bearer auth, dashboard sessions and telemetry.

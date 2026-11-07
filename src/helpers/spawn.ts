@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -130,6 +130,47 @@ function childEnvironment(home?: string): NodeJS.ProcessEnv {
   if (process.env.NODE_ENV === "test" && process.env.QODER_TRACE_FILE)
     env.QODER_TRACE_FILE = process.env.QODER_TRACE_FILE;
   return env;
+}
+export async function listCliModels(): Promise<string> {
+  const home = await realpath(await mkdtemp(join(tmpdir(), "qoder-models-")));
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      const child = execFile(
+        config.QODERCLI_BIN,
+        ["--list-models"],
+        {
+          env: childEnvironment(home),
+          cwd: home,
+          timeout: config.QODER_MODEL_DISCOVERY_TIMEOUT_MS,
+          maxBuffer: 1024 * 1024,
+          killSignal: "SIGKILL",
+        },
+        (error, stdout, stderr) => {
+          if (error)
+            reject(
+              Object.assign(
+                new ProxyError(
+                  "CLI model discovery failed",
+                  503,
+                  "model_discovery_unavailable",
+                ),
+                {
+                  authenticationRejected:
+                    /\b(?:401|403)\b|invalid personal access token|unauthori[sz]ed|authentication.*(?:failed|rejected)|token.*expired/i.test(
+                      stderr + stdout,
+                    ),
+                },
+              ),
+            );
+          else resolve(stdout);
+        },
+      );
+      children.add(child);
+      child.once("close", () => children.delete(child));
+    });
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
 }
 export async function checkQoderCli(): Promise<string | null> {
   const home = await realpath(

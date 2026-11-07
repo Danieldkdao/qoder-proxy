@@ -201,23 +201,31 @@ beforeAll(async () => {
     });
   });
   base = `http://127.0.0.1:${port}`;
-  server = spawn(process.execPath, ["--import", resolve("test/catalog-preload.fixture.ts"), resolve(source, "server.js")], {
-    env: {
-      ...process.env,
-      PORT: String(port),
-      QODERCLI_BIN: binary,
-      QODER_PERSONAL_ACCESS_TOKEN: "test-pat",
-      PROXY_API_KEY: "test-key",
-      DASHBOARD_PASSWORD: "test-password",
-      DASHBOARD_SECRET: "test-secret",
-      NODE_ENV: "test",
-      QODER_TIMEOUT_MS: "1000",
-      QODER_MAX_CONCURRENCY: "1",
-      QODER_MAX_QUEUE: "1",
-      QODER_TRACE_FILE: join(dir, "trace"),
+  server = spawn(
+    process.execPath,
+    [
+      "--import",
+      resolve("test/catalog-preload.fixture.ts"),
+      resolve(source, "server.js"),
+    ],
+    {
+      env: {
+        ...process.env,
+        PORT: String(port),
+        QODERCLI_BIN: binary,
+        QODER_PERSONAL_ACCESS_TOKEN: "test-pat",
+        PROXY_API_KEY: "test-key",
+        DASHBOARD_PASSWORD: "test-password",
+        DASHBOARD_SECRET: "test-secret",
+        NODE_ENV: "test",
+        QODER_TIMEOUT_MS: "1000",
+        QODER_MAX_CONCURRENCY: "1",
+        QODER_MAX_QUEUE: "1",
+        QODER_TRACE_FILE: join(dir, "trace"),
+      },
+      stdio: ["ignore", "pipe", "pipe"],
     },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  );
   server.stdout!.on("data", (d) => {
     logs += d;
   });
@@ -494,16 +502,28 @@ describe("HTTP / Hermes provider contract", () => {
     ).toBe(401);
   });
   it("discovers CLI-compatible live models for Desktop and accepts the discovered ID in chat", async () => {
-    const response = await fetch(base + "/v1/models", {headers:{Authorization:"Bearer test-key"}});
+    const response = await fetch(base + "/v1/models", {
+      headers: { Authorization: "Bearer test-key" },
+    });
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
-    const body=await response.json();
+    const body = await response.json();
     expect(body.object).toBe("list");
-    expect(body.data.map((m:any)=>m.id)).toEqual(["auto","next_generation"]);
-    const completion=await request({model:"next_generation",messages});
+    expect(
+      body.data.every(
+        (m: any) =>
+          m.supports_reasoning === false && m.supports_vision === false,
+      ),
+    ).toBe(true);
+    expect(body.data.map((m: any) => m.id)).toEqual([
+      "auto",
+      "next_generation",
+    ]);
+    const completion = await request({ model: "next_generation", messages });
     expect(completion.status).toBe(200);
     expect((await completion.json()).model).toBe("next_generation");
-    for(const model of ["api_only","constructor","__proto__","not-a-model"])expect((await request({model,messages})).status).toBe(400);
+    for (const model of ["api_only", "constructor", "__proto__", "not-a-model"])
+      expect((await request({ model, messages })).status).toBe(400);
   });
   it("does not advertise misleading OpenAI and Claude model aliases", async () => {
     const response = await fetch(base + "/v1/models", {

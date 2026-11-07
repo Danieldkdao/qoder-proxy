@@ -288,6 +288,7 @@ export async function autostartTask(action: string): Promise<void> {
   await writeFile(join(bundle, "owner"), marker, { mode: 0o600 });
   for (const file of [
     "scripts/autostart.mts",
+    "scripts/hermes-credential.mts",
     "scripts/tasks.mts",
     "scripts/docker.mts",
     "dist/runtime-env.js",

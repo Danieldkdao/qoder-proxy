@@ -27,6 +27,24 @@ const config = {
   QODER_PAT:
     process.env.QODER_PERSONAL_ACCESS_TOKEN || process.env.QODER_API_KEY || "",
   QODERCLI_BIN: process.env.QODERCLI_BIN || "qodercli",
+  QODER_MODEL_CACHE_TTL_MS: integer(
+    "QODER_MODEL_CACHE_TTL_MS",
+    300000,
+    1000,
+    86400000,
+  ),
+  QODER_MODEL_CACHE_STALE_MS: integer(
+    "QODER_MODEL_CACHE_STALE_MS",
+    1800000,
+    1000,
+    86400000,
+  ),
+  QODER_MODEL_DISCOVERY_TIMEOUT_MS: integer(
+    "QODER_MODEL_DISCOVERY_TIMEOUT_MS",
+    15000,
+    1000,
+    120000,
+  ),
   QODER_TIMEOUT_MS: integer("QODER_TIMEOUT_MS", 120000),
   QODER_MAX_CONCURRENCY: integer("QODER_MAX_CONCURRENCY", 1, 1, 32),
   QODER_MAX_QUEUE: integer("QODER_MAX_QUEUE", 8, 0, 1000),
@@ -45,4 +63,8 @@ const config = {
   LOG_BODY_MAX_BYTES: integer("LOG_BODY_MAX_BYTES", 8192),
   LOG_PAYLOADS: process.env.LOG_PAYLOADS === "true",
 };
+if (config.QODER_MODEL_CACHE_STALE_MS < config.QODER_MODEL_CACHE_TTL_MS)
+  throw Error(
+    "QODER_MODEL_CACHE_STALE_MS must be at least QODER_MODEL_CACHE_TTL_MS",
+  );
 export default config;

@@ -16,7 +16,7 @@ import {
   getRequests,
   getSystem,
 } from "../store/logStore";
-import { QODER_MODELS } from "../helpers/format";
+import { modelCatalog } from "../helpers/modelCatalog";
 import { processStats } from "../helpers/spawn";
 import { handleChat } from "./chat";
 export const dashboardRouter = Router();
@@ -67,9 +67,14 @@ dashboardRouter.get("/api/config", (_req, res) =>
     payloadLogging: config.LOG_PAYLOADS,
   }),
 );
-dashboardRouter.get("/api/models", (_req, res) =>
-  res.json({ models: QODER_MODELS }),
-);
+dashboardRouter.get("/api/models", (_req, res, next) => {
+  modelCatalog
+    .get(true)
+    .then((catalog) =>
+      res.json({ models: catalog.models, stale: catalog.stale }),
+    )
+    .catch(next);
+});
 dashboardRouter.get("/api/status", (_req, res) =>
   res.json({
     status: "ok",

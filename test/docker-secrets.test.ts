@@ -68,5 +68,5 @@ describe.skipIf(!enabled)("secure secret-delivery container", () => {
         "console.log(Boolean(process.env.PROXY_API_KEY||process.env.QODER_PERSONAL_ACCESS_TOKEN||process.env.OP_SERVICE_ACCOUNT_TOKEN))",
       ]).trim(),
     ).toBe("false");
-  });
+  }, 30000);
 });

@@ -9,6 +9,7 @@ import { chatRouter } from "./routes/chat";
 import { completionsRouter } from "./routes/completions";
 import { miscRouter, readiness } from "./routes/misc";
 import { dashboardRouter } from "./routes/dashboard";
+import { modelCatalog } from "./helpers/modelCatalog";
 import { shutdown } from "./helpers/spawn";
 export function createApp() {
   const app = express();
@@ -79,6 +80,8 @@ export function startServer() {
   const server = createApp().listen(config.PORT, config.HOST, () =>
     console.log(`Qoder proxy listening on ${config.HOST}:${config.PORT}`),
   );
+  // Warm discovery before Desktop opens its short-budget model picker.
+  void modelCatalog.get().catch(() => {});
   let stopping = false;
   const stop = () => {
     if (stopping) return;
