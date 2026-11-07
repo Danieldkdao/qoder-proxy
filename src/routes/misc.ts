@@ -18,7 +18,14 @@ miscRouter.get("/models", (req, res, next) => {
           owned_by: "qoder",
           name: model.label,
           supports_vision: false,
-          supports_reasoning: false,
+          supports_reasoning: model.supports_reasoning,
+          supported_efforts: model.supported_efforts,
+          default_effort: model.default_effort,
+          can_disable_reasoning: model.can_disable_reasoning,
+          supported_parameters:
+            model.supports_reasoning || model.can_disable_reasoning
+              ? ["reasoning_effort"]
+              : [],
           ...(model.context_length
             ? { context_length: model.context_length }
             : {}),

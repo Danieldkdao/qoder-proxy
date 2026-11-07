@@ -24,7 +24,8 @@
     "hermes:configure": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:configure",
     "autostart:install": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:install",
     "autostart:status": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:status",
-    "autostart:uninstall": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:uninstall"
+    "autostart:uninstall": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:uninstall",
+    "qoder:check": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts qoder:check"
   },
   "keywords": [
     "qoder",

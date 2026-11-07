@@ -40,7 +40,7 @@ model_overrides:
       supports_reasoning: false
 ```
 
-The profile also declares the same defaults for the normalized `custom:qoder-proxy` alias. These overrides describe the proxy's wire capabilities. Qoder may reason internally; external reasoning controls and image input are not implemented by this proxy. The generic `/models` flags alone are insufficient for the current Hermes picker, which reads provider-scoped capability overrides. Other providers retain their own capability settings.
+The profile also declares the same defaults for the normalized `custom:qoder-proxy` alias. These overrides describe the proxy's wire capabilities. The `_default` stays conservative; per-model entries generated from the live catalog enable reasoning controls where Qoder advertises effort levels. Image input remains unsupported. See [thinking controls](availability-and-reasoning.md). The generic `/models` flags alone are insufficient for the current Hermes picker, which reads provider-scoped capability overrides. Other providers retain their own capability settings.
 
 The helper reads the service-account bootstrap token from Keychain, authenticates `op run` and returns only `PROXY_API_KEY` to Hermes through a captured stdout pipe. **Do not execute the helper manually in Terminal**: stdout is deliberately a credential channel. Its internal `--no-masking` is required for the private pipe to carry an actual key; stdout/stderr are captured by Hermes, never emitted by tests or startup logs. Errors contain no raw command diagnostics. The service-account token and Qoder PAT are not passed to the Hermes inference client. They exist only in the short-lived credential-fetch process. No `.env` file or inline provider key is created.
 

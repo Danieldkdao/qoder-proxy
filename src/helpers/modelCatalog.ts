@@ -22,6 +22,10 @@ export interface DiscoveredModel {
   id: string;
   label: string;
   supports_vision: false;
+  supports_reasoning: boolean;
+  supported_efforts: string[];
+  default_effort?: string;
+  can_disable_reasoning: boolean;
   context_length?: number;
 }
 export function parseCliModels(text: string): string[] {
@@ -103,7 +107,31 @@ export function intersectModels(
       id: r.id,
       label: r.display_name,
       supports_vision: false,
+      supports_reasoning: false,
+      supported_efforts: [],
+      can_disable_reasoning: false,
     };
+    const order = ["minimal", "low", "medium", "high", "xhigh", "max"];
+    if (r.efforts !== undefined) {
+      if (
+        !Array.isArray(r.efforts) ||
+        r.efforts.some((e) => typeof e !== "string" || !order.includes(e))
+      )
+        throw unavailable();
+      model.supported_efforts = order.filter((e) =>
+        (r.efforts as string[]).includes(e),
+      );
+    }
+    model.supports_reasoning = model.supported_efforts.length > 0;
+    model.can_disable_reasoning = r.support_disable_reasoning === true;
+    if (r.default_effort !== undefined) {
+      if (
+        typeof r.default_effort !== "string" ||
+        !model.supported_efforts.includes(r.default_effort)
+      )
+        throw unavailable();
+      model.default_effort = r.default_effort;
+    }
     if (
       Number.isSafeInteger(r.max_input_tokens) &&
       Number(r.max_input_tokens) > 0
@@ -221,6 +249,26 @@ export class ModelCatalog {
     if (this.snapshot && this.now() - this.snapshot.fetchedAt < stale)
       return structuredClone({ ...this.snapshot, stale: !!this.failure });
     throw this.failure || unavailable();
+  }
+  async validateEffort(
+    id: string,
+    requested: unknown,
+  ): Promise<string | undefined> {
+    if (requested === undefined) return undefined;
+    const model = (await this.get()).models.find((model) => model.id === id);
+    if (
+      typeof requested !== "string" ||
+      !model ||
+      !(requested === "none"
+        ? model.can_disable_reasoning
+        : model.supported_efforts.includes(requested))
+    )
+      throw new ProxyError(
+        "Unsupported reasoning_effort for this model; use its supported_efforts from /v1/models (none requires can_disable_reasoning)",
+        400,
+        "unsupported_parameter",
+      );
+    return requested;
   }
   async resolve(
     requested: unknown,

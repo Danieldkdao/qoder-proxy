@@ -221,6 +221,7 @@ export async function runQoder(
   signal?: AbortSignal,
   onText?: (text: string) => Promise<void>,
   outputTokens = config.QODER_MAX_OUTPUT_TOKENS,
+  reasoningEffort?: string,
 ): Promise<QoderResult> {
   if (Buffer.byteLength(prompt) > config.MAX_PROMPT_BYTES)
     throw new ProxyError(
@@ -234,7 +235,15 @@ export async function runQoder(
     if (signal?.aborted)
       throw new ProxyError("Request cancelled", 499, "cancelled");
     cwd = await realpath(await mkdtemp(join(tmpdir(), "qoder-inference-")));
-    return await execute(cwd, prompt, model, signal, onText, outputTokens);
+    return await execute(
+      cwd,
+      prompt,
+      model,
+      signal,
+      onText,
+      outputTokens,
+      reasoningEffort,
+    );
   } finally {
     if (cwd) await rm(cwd, { recursive: true, force: true });
     release();
@@ -247,6 +256,7 @@ async function execute(
   signal: AbortSignal | undefined,
   onText: ((text: string) => Promise<void>) | undefined,
   outputTokens: string,
+  reasoningEffort?: string,
 ): Promise<QoderResult> {
   // stdin avoids ARG_MAX and process-list disclosure. Isolated HOME/cwd and
   // disabled built-ins keep Hermes responsible for executing external tools.
@@ -265,6 +275,19 @@ async function execute(
     "",
     "--no-session-persistence",
   ];
+  if (reasoningEffort !== undefined) {
+    if (
+      !["none", "minimal", "low", "medium", "high", "xhigh", "max"].includes(
+        reasoningEffort,
+      )
+    )
+      throw new ProxyError("Invalid reasoning effort");
+    args.push(
+      ...(reasoningEffort === "none"
+        ? ["--thinking", "disabled"]
+        : ["--reasoning-effort", reasoningEffort]),
+    );
+  }
   const child = spawn(config.QODERCLI_BIN, args, {
     cwd,
     env: childEnvironment(cwd),

@@ -120,3 +120,5 @@ These tests do not call paid models or prove production quality for every Qoder 
 CI runs tests before publishing AMD64/ARM64 images into the fork's own GHCR namespace. MIT license; retain the existing notice.
 
 For automatic recovery after macOS login using a scoped 1Password service account and Keychain, see [automatic startup](docs/autostart.md).
+
+Use `npm run qoder:check` for a read-only CLI release and QoDuck discovery check. See [availability checks and thinking efforts](docs/availability-and-reasoning.md) for per-model reasoning controls.

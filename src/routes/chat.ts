@@ -29,6 +29,7 @@ const accepted = new Set([
   "max_completion_tokens",
   "stream_options",
   "parallel_tool_calls",
+  "reasoning_effort",
 ]);
 export async function handleChat(
   req: Request,
@@ -103,6 +104,10 @@ export async function handleChat(
       body.model,
       req.baseUrl.startsWith("/hermes/v1"),
     );
+    const effort = await modelCatalog.validateEffort(
+      canonicalModel,
+      body.reasoning_effort,
+    );
     const model =
         req.baseUrl.startsWith("/hermes/v1") && typeof body.model === "string"
           ? body.model
@@ -153,6 +158,7 @@ export async function handleChat(
           }
         : undefined,
       limit === 32000 ? "32k" : limit === 16000 ? "16k" : undefined,
+      effort,
     );
     const parsed = enabled ? parseToolCallFromText(result.text, tools) : null;
     const calls = parsed ? toOpenAIToolCalls(parsed) : undefined;

@@ -104,6 +104,9 @@ async function main(): Promise<void> {
     case "start":
       run(process.execPath, ["dist/server.js"], runtimeEnvironment());
       break;
+    case "qoder:check":
+      await (await import("./availability.mts")).availabilityTask();
+      break;
     case "proxy:check":
     case "hermes:test":
     case "hermes:chat":

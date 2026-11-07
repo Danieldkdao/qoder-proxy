@@ -512,7 +512,8 @@ describe("HTTP / Hermes provider contract", () => {
     expect(
       body.data.every(
         (m: any) =>
-          typeof m.supports_reasoning === "boolean" && m.supports_vision === false,
+          typeof m.supports_reasoning === "boolean" &&
+          m.supports_vision === false,
       ),
     ).toBe(true);
     expect(body.data.map((m: any) => m.id)).toEqual([
@@ -557,17 +558,48 @@ describe("HTTP / Hermes provider contract", () => {
       400,
     );
   });
-  it("advertises live thinking levels and forwards validated OpenAI reasoning_effort to the CLI",async()=>{
-    const headers={Authorization:"Bearer test-key","Content-Type":"application/json"};
-    const list=await(await fetch(base+"/v1/models",{headers})).json();
-    const model=list.data.find((m:any)=>m.id==="next_generation");
-    expect(model).toMatchObject({supports_reasoning:true,supported_efforts:["low","high"],default_effort:"high",can_disable_reasoning:true});
-    for(const effort of ["low","high","none"]){
-      const r=await fetch(base+"/hermes/v1/chat/completions",{method:"POST",headers,body:JSON.stringify({model:"Next Generation",messages:[{role:"user",content:"REPORT_EFFORT"}],reasoning_effort:effort})});
-      expect(r.status).toBe(200);expect((await r.json()).choices[0].message.content).toBe(effort==="none"?"THINKING=disabled":"EFFORT="+effort);
+  it("advertises live thinking levels and forwards validated OpenAI reasoning_effort to the CLI", async () => {
+    const headers = {
+      Authorization: "Bearer test-key",
+      "Content-Type": "application/json",
+    };
+    const list = await (await fetch(base + "/v1/models", { headers })).json();
+    const model = list.data.find((m: any) => m.id === "next_generation");
+    expect(model).toMatchObject({
+      supports_reasoning: true,
+      supported_efforts: ["low", "high"],
+      default_effort: "high",
+      can_disable_reasoning: true,
+    });
+    for (const effort of ["low", "high", "none"]) {
+      const r = await fetch(base + "/hermes/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "Next Generation",
+          messages: [{ role: "user", content: "REPORT_EFFORT" }],
+          reasoning_effort: effort,
+        }),
+      });
+      expect(r.status).toBe(200);
+      expect((await r.json()).choices[0].message.content).toBe(
+        effort === "none" ? "THINKING=disabled" : "EFFORT=" + effort,
+      );
     }
-    for(const effort of ["medium","max",false,{effort:"high"}])expect((await request({model:"next_generation",messages,reasoning_effort:effort})).status).toBe(400);
-    expect((await request({model:"auto",messages,reasoning_effort:"high"})).status).toBe(400);
+    for (const effort of ["medium", "max", false, { effort: "high" }])
+      expect(
+        (
+          await request({
+            model: "next_generation",
+            messages,
+            reasoning_effort: effort,
+          })
+        ).status,
+      ).toBe(400);
+    expect(
+      (await request({ model: "auto", messages, reasoning_effort: "high" }))
+        .status,
+    ).toBe(400);
   });
   it("does not advertise misleading OpenAI and Claude model aliases", async () => {
     const response = await fetch(base + "/v1/models", {
