@@ -9,11 +9,15 @@ const require = createRequire(import.meta.url);
 describe("1Password runtime-only secret delivery", () => {
   it("provides an Environment ID template for every public npm command", () => {
     const pkg = JSON.parse(readFileSync("package.json", "utf8"));
-    for (const command of Object.values(pkg.scripts) as string[]) {
+    for (const [task, command] of Object.entries(pkg.scripts) as [
+      string,
+      string,
+    ][]) {
       expect(command).toMatch(
-        /^op run --environment (?:ENVIRONMENT_ID|[a-z2-7]{26}) -- node scripts\/tasks\.mts /,
+        /^op run --environment (?:ENVIRONMENT_ID|[a-z2-7]{26})(?: --no-masking)? -- node scripts\/tasks\.mts /,
       );
-      expect(command).not.toContain("--no-masking");
+      if (task === "qoder:check") expect(command).toContain("--no-masking");
+      else expect(command).not.toContain("--no-masking");
     }
   });
   it("uses the same nonstandard host port by default while accepting an explicit override", async () => {

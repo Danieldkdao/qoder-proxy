@@ -25,7 +25,7 @@
     "autostart:install": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:install",
     "autostart:status": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:status",
     "autostart:uninstall": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:uninstall",
-    "qoder:check": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts qoder:check"
+    "qoder:check": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 --no-masking -- node scripts/tasks.mts qoder:check"
   },
   "keywords": [
     "qoder",

@@ -95,6 +95,25 @@ export async function checkAvailability(dependencies: Dependencies) {
     note: "Read-only check. No candidate CLI was installed or tested. No inference requests, pin changes, container replacements or proxy restarts.",
   };
 }
+export function formatAvailability(
+  result: Awaited<ReturnType<typeof checkAvailability>>,
+): string {
+  const release = (label: string, value: typeof result.npm) =>
+    "error" in value
+      ? `${label}: unavailable`
+      : `${label}: ${value.version} (newer: ${value.newerThanPinned ? "yes" : "no"})`;
+  return [
+    `Pinned CLI: ${result.pinnedVersion}`,
+    release("npm stable", result.npm),
+    release("Standalone stable", result.standalone),
+    `Installed CLI: ${"error" in result.runningCli ? "unavailable" : result.runningCli.version}`,
+    `QoDuck in account API: ${result.qoduck.api}`,
+    `QoDuck in installed CLI: ${result.qoduck.cli}`,
+    `Discoverable in both: ${result.qoduck.discoverableInBoth ? "yes" : "no"}`,
+    "QoDuck inference verified: no (discovery check only)",
+    result.note,
+  ].join("\n");
+}
 export function cliCheckArguments(name: string): string[] {
   if (!/^[\w][\w.-]*$/.test(name)) throw Error("Invalid container name");
   const code = `const fs=require('node:fs'),cp=require('node:child_process');const p=JSON.parse(fs.readFileSync(0,'utf8'));const home=fs.mkdtempSync('/tmp/qoder-availability-');const env={PATH:process.env.PATH,HOME:home,CI:'1',NO_BROWSER:'1',QODER_PERSONAL_ACCESS_TOKEN:p.pat};try{const options={cwd:home,env,encoding:'utf8',timeout:15000,maxBuffer:1048576};const v=cp.spawnSync('/usr/local/bin/qodercli',['--version'],options);const r=cp.spawnSync('/usr/local/bin/qodercli',['--list-models'],options);if(v.status!==0||r.status!==0)process.exit(1);const lines=r.stdout.replace(/\\u001b\\[[0-?]*[ -/]*[@-~]/g,'').trim().split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);if(lines.shift()!=='MODEL')process.exit(1);process.stdout.write(JSON.stringify({version:v.stdout.trim(),names:lines}));}finally{fs.rmSync(home,{recursive:true,force:true});}`;
@@ -198,7 +217,7 @@ export async function availabilityTask(): Promise<void> {
       });
     },
   });
-  console.log(JSON.stringify(result, null, 2));
+  console.log(formatAvailability(result));
   if (
     result.qoduck.api === "unknown" ||
     result.qoduck.cli === "unknown" ||

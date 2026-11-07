@@ -3,6 +3,7 @@ import {
   checkAvailability,
   type Dependencies,
   cliCheckArguments,
+  formatAvailability,
 } from "../scripts/availability.mts";
 function fixture() {
   const fetchJson = vi.fn(async (url: string): Promise<unknown> =>
@@ -24,6 +25,14 @@ function fixture() {
   return { dependencies, fetchJson, cli };
 }
 describe("read-only CLI and QoDuck availability check", () => {
+  it("formats a readable report without raw boolean tokens that 1Password may mask", async () => {
+    const result = await checkAvailability(fixture().dependencies);
+    const report = formatAvailability(result);
+    expect(report).toContain("Pinned CLI: 1.1.84");
+    expect(report).toContain("npm stable: 1.1.85 (newer: yes)");
+    expect(report).toContain("QoDuck in installed CLI: absent");
+    expect(report).not.toMatch(/\b(?:true|false)\b/);
+  });
   it("compares both official channels to the pin without installing a candidate", async () => {
     const f = fixture();
     const result = await checkAvailability(f.dependencies);
