@@ -16,4 +16,3 @@ nul
 dist/
 coverage/
 .env.*
-!.env.example

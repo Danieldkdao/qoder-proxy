@@ -69,7 +69,7 @@ export function createApp() {
   app.use(errors);
   return app;
 }
-if (require.main === module) {
+export function startServer() {
   if (!config.API_KEY && !config.ALLOW_UNAUTHENTICATED) {
     console.error(
       "Set PROXY_API_KEY or explicitly enable ALLOW_UNAUTHENTICATED for a private deployment",
@@ -90,3 +90,5 @@ if (require.main === module) {
   process.on("SIGTERM", stop);
   process.on("SIGINT", stop);
 }
+
+if (require.main === module) startServer();

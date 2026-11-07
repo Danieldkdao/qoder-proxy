@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { randomBytes } from "node:crypto";
 function integer(
   name: string,

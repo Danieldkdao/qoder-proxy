@@ -9,21 +9,29 @@ A TypeScript OpenAI Chat Completions adapter for Qoder CLI, intended for a priva
 
 ```sh
 npm ci
+# Authorize 1Password CLI access; this checkout already has your Environment ID.
 npm test
-cp .env.example .env
-# Edit .env: set QODER_PERSONAL_ACCESS_TOKEN and a strong PROXY_API_KEY.
-npm start
+npm run docker:build
+npm run docker:start
+npm run proxy:check
+npm run hermes:test
 ```
 
-`npm test` builds the server and browser TypeScript before running Vitest. `npm run typecheck` checks types without emitting. `npm run format:check` checks formatting. `npm run dev` rebuilds the server/browser on changes and restarts the server. Generated JavaScript lives in ignored `dist/`; edit the `.ts` source.
+Follow [the complete 1Password setup and environment-variable guide](docs/1password-setup.md). No application `.env` file is read. Every public package script uses `op run --environment umcywiy3b7hzpi2ln4zqrcywi4`; build/test/format subprocesses receive a minimal, non-secret environment. CI invokes the internal task runner directly and does not require 1Password credentials.
+
+`npm test` (after authorizing 1Password CLI) builds the server and browser TypeScript before running Vitest. `npm run typecheck` checks types without emitting. `npm run format:check` checks formatting. `npm run dev` rebuilds the server/browser on changes and restarts the server. Generated JavaScript lives in ignored `dist/`; edit the `.ts` source.
 
 ## Docker
 
 ```sh
-docker build -t qoder-proxy:local .
-docker run -d --name qoder-proxy --restart unless-stopped \
-  -p 127.0.0.1:3000:3000 --env-file .env qoder-proxy:local
+npm run docker:build
+npm run docker:start
+npm run docker:status
+# Recreate with fresh secrets after a rotation or Docker/Mac restart:
+npm run docker:restart
 ```
+
+The secure launcher transmits an allowlisted payload over stdin. Secret values are not saved in Docker `Config.Env`, image layers, argv, or env files. The running process and Docker/host administrators still have access to runtime secrets. Automatic Docker restart is disabled because it cannot restore the in-memory payload without reauthorizing 1Password. See the setup guide for lifecycle and SSH details.
 
 The image uses Node 24, installs CA certificates and the pinned CLI, and runs as the non-root `node` user. Supply secrets at runtime. Do not mount your home directory, Docker socket, or source tree into the proxy. The default Docker build does not copy `.env`, Git metadata, tests, or development output.
 

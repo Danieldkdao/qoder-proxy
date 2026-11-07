@@ -4,14 +4,23 @@
   "description": "OpenAI-compatible API proxy for Qoder CLI",
   "main": "dist/server.js",
   "scripts": {
-    "build": "node scripts/build.mts",
-    "start": "node dist/server.js",
-    "dev": "npm run build && concurrently -k \"tsc -p tsconfig.json --watch\" \"tsc -p tsconfig.browser.json --watch\" \"node --watch dist/server.js\"",
-    "test": "npm run build && vitest run",
-    "test:watch": "npm run build && concurrently -k \"tsc -p tsconfig.json --watch\" \"tsc -p tsconfig.browser.json --watch\" \"vitest\"",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.browser.json --noEmit && tsc -p tsconfig.test.json",
-    "format": "prettier --write \"src/**/*.{ts,html,css}\" \"test/**/*.ts\" \"scripts/*.mts\" \"*.json\" \"*.md\" \".github/**/*.{md,yml}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,css}\" \"test/**/*.ts\" \"scripts/*.mts\" \"*.json\" \"*.md\" \".github/**/*.{md,yml}\""
+    "build": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts build",
+    "start": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts start",
+    "dev": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts dev",
+    "test": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts test",
+    "test:watch": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts test:watch",
+    "typecheck": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts typecheck",
+    "format": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts format",
+    "format:check": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts format:check",
+    "docker:build": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts docker:build",
+    "docker:start": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts docker:start",
+    "docker:restart": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts docker:restart",
+    "docker:stop": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts docker:stop",
+    "docker:status": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts docker:status",
+    "proxy:check": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts proxy:check",
+    "hermes:test": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:test",
+    "hermes:chat": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:chat",
+    "test:docker": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts test:docker"
   },
   "keywords": [
     "qoder",
@@ -25,7 +34,6 @@
   "dependencies": {
     "ajv": "^8.20.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
     "express": "^4.18.2"
   },
   "engines": {

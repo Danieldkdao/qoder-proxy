@@ -5,7 +5,7 @@ RUN npm ci
 COPY tsconfig*.json ./
 COPY scripts/ ./scripts/
 COPY src/ ./src/
-RUN npm run build
+RUN node scripts/build.mts
 
 FROM build AS production-dependencies
 RUN npm prune --omit=dev

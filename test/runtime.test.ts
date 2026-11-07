@@ -40,6 +40,14 @@ describe("runtime supervision and CLI isolation", () => {
     );
     expect(status).toBe(503);
   });
+  it("uses an isolated writable home even for readiness probes", async () => {
+    config.QODERCLI_BIN = binary(
+      "if(process.env.HOME === " +
+        JSON.stringify(process.env.HOME) +
+        ") process.exit(4);console.log('1.0-isolated')",
+    );
+    expect(await runner.checkQoderCli()).toBe("1.0-isolated");
+  });
   it("kills a process which ignores SIGTERM at timeout", async () => {
     config.QODERCLI_BIN = binary(
       "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)",

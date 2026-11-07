@@ -3,7 +3,6 @@ dist
 coverage
 .env
 .env.*
-!.env.example
 *.log
 .git
 .github

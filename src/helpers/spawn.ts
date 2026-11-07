@@ -132,38 +132,47 @@ function childEnvironment(home?: string): NodeJS.ProcessEnv {
   return env;
 }
 export async function checkQoderCli(): Promise<string | null> {
-  return new Promise((resolve) => {
-    let output = "",
-      settled = false;
-    const finish = (result: string | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(result);
-    };
-    let child: ChildProcess;
-    try {
-      child = spawn(config.QODERCLI_BIN, ["--version"], {
-        stdio: ["ignore", "pipe", "pipe"],
-        env: childEnvironment(),
-        shell: false,
+  const home = await realpath(
+    await mkdtemp(join(tmpdir(), "qoder-readiness-")),
+  );
+  try {
+    return await new Promise<string | null>((resolve) => {
+      let output = "",
+        settled = false;
+      const finish = (result: string | null) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(result);
+      };
+      let child: ChildProcess;
+      try {
+        child = spawn(config.QODERCLI_BIN, ["--version"], {
+          stdio: ["ignore", "pipe", "pipe"],
+          env: childEnvironment(home),
+          shell: false,
+        });
+      } catch {
+        resolve(null);
+        return;
+      }
+      const timer = setTimeout(() => {
+        child.kill("SIGKILL");
+        finish(null);
+      }, 5000);
+      child.stdout?.on("data", (data: Buffer) => {
+        output = (output + data.toString()).slice(0, 1024);
       });
-    } catch {
-      resolve(null);
-      return;
-    }
-    const timer = setTimeout(() => {
-      child.kill("SIGKILL");
-      finish(null);
-    }, 5000);
-    child.stdout?.on("data", (data: Buffer) => {
-      output = (output + data.toString()).slice(0, 1024);
+      child.on("error", () => finish(null));
+      child.on("close", (code) =>
+        finish(
+          code === 0 && output.trim() ? output.trim().slice(0, 100) : null,
+        ),
+      );
     });
-    child.on("error", () => finish(null));
-    child.on("close", (code) =>
-      finish(code === 0 && output.trim() ? output.trim().slice(0, 100) : null),
-    );
-  });
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
 }
 export async function runQoder(
   prompt: string,

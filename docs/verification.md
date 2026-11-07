@@ -29,3 +29,14 @@ The test build stage retains development dependencies; the production-dependenci
 No Qoder PAT was configured in the checkout/environment. Consequently, authenticated Qoder inference, account/model availability, credit usage, and a live Hermes session were **not** verified. Configure the PAT locally and follow README.md to perform that acceptance test. Do not commit credentials.
 
 Tool calling remains model-dependent prompt emulation. Unsupported parameters and non-text inputs now fail explicitly; consult README.md before routing Hermes auxiliary/vision workloads through this provider. Passing deterministic tests is not a guarantee that every upstream model will follow the tool protocol.
+
+## 1Password deployment workflow
+
+The 1Password-only deployment was developed from failing tests in `c9229dc`. Physical dotenv loading was removed. Every public npm command uses the supplied Environment ID; CI uses secret-free internal tasks.
+
+- 49 standard Vitest tests pass; three additional Docker integration tests pass when explicitly enabled.
+- The read-only, non-root Docker container authenticates with stdin-injected credentials. Synthetic secrets are absent from saved Docker metadata, container logs and new exec environments.
+- The actual installed Hermes CLI completed a tool-call/result/final-answer exchange against a fixture-backed Docker proxy. A temporary proof file confirmed actual Hermes terminal execution. Profile cleanup was also verified.
+- The production target was confirmed to be the Mac Mini.
+
+Fixture-backed checks do not authenticate to Qoder or spend credits. Live-account acceptance is recorded separately once 1Password authorization and the real PAT have been verified.

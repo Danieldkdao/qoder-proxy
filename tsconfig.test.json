@@ -7,7 +7,8 @@
     "types": ["node", "vitest/globals"],
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["test/**/*.ts", "scripts/*.mts"]
 }
