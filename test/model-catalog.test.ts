@@ -152,17 +152,31 @@ describe("live account and CLI model discovery", () => {
       status: 400,
     });
   });
-  it("maps live display names to canonical IDs only when explicitly requested",async()=>{
-    const f=fixture();
-    expect(await f.catalog.resolve("Brand New",true)).toBe("brand_new");
-    expect(await f.catalog.resolve("brand_new",true)).toBe("brand_new");
-    await expect(f.catalog.resolve("Brand New")).rejects.toMatchObject({status:400});
-    await expect(f.catalog.resolve("Invented Label",true)).rejects.toMatchObject({status:400});
+  it("maps live display names to canonical IDs only when explicitly requested", async () => {
+    const f = fixture();
+    expect(await f.catalog.resolve("Brand New", true)).toBe("brand_new");
+    expect(await f.catalog.resolve("brand_new", true)).toBe("brand_new");
+    await expect(f.catalog.resolve("Brand New")).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(
+      f.catalog.resolve("Invented Label", true),
+    ).rejects.toMatchObject({ status: 400 });
   });
-  it("rejects ambiguous display names rather than selecting an arbitrary model",async()=>{
-    const catalog=new ModelCatalog({api:async()=>({data:[{id:"one",display_name:"Same"},{id:"two",display_name:"Same"}]}),cli:async()=>"MODEL\nSame\n"});
-    await expect(catalog.resolve("Same",true)).rejects.toMatchObject({status:400});
-    expect(await catalog.resolve("one",true)).toBe("one");
+  it("rejects ambiguous display names rather than selecting an arbitrary model", async () => {
+    const catalog = new ModelCatalog({
+      api: async () => ({
+        data: [
+          { id: "one", display_name: "Same" },
+          { id: "two", display_name: "Same" },
+        ],
+      }),
+      cli: async () => "MODEL\nSame\n",
+    });
+    await expect(catalog.resolve("Same", true)).rejects.toMatchObject({
+      status: 400,
+    });
+    expect(await catalog.resolve("one", true)).toBe("one");
   });
   it("uses bounded stale results for transient errors and backs off repeated failures", async () => {
     const f = fixture();

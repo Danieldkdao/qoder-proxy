@@ -78,7 +78,9 @@ function emit(prompt: string) {
         '{"tool_call":{"name":"terminal","arguments":{"command":"pwd"}}}';
   }
   const text =
-    (prompt.includes("REPORT_MODEL") ? "CLI_MODEL="+args[args.indexOf("--model")+1] : "") ||
+    (prompt.includes("REPORT_MODEL")
+      ? "CLI_MODEL=" + args[args.indexOf("--model") + 1]
+      : "") ||
     workflow ||
     (prompt.includes("RETURN_TOOL")
       ? '{"tool_call":{"name":"terminal","arguments":{"command":"pwd"}}}'

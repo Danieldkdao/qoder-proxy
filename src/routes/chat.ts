@@ -99,7 +99,14 @@ export async function handleChat(
     const messages = validateMessages(body.messages),
       tools = validateTools(body.tools),
       choice = validateChoice(body.tool_choice, tools);
-    const model = await modelCatalog.resolve(body.model),
+    const canonicalModel = await modelCatalog.resolve(
+      body.model,
+      req.baseUrl.startsWith("/hermes/v1"),
+    );
+    const model =
+        req.baseUrl.startsWith("/hermes/v1") && typeof body.model === "string"
+          ? body.model
+          : canonicalModel,
       id = newId(legacy ? "cmpl" : "chatcmpl");
     const enabled = tools.length > 0 && choice !== "none";
     const prompt = enabled
@@ -134,7 +141,7 @@ export async function handleChat(
     });
     const result = await runQoder(
       prompt,
-      model,
+      canonicalModel,
       controller.signal,
       streaming && !enabled
         ? async (text) => {

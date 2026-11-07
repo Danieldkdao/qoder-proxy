@@ -40,10 +40,12 @@ export function createApp() {
     );
     app.use("/dashboard", dashboardRouter);
   }
-  app.use("/v1", authMiddleware, logger);
-  app.use("/v1/chat/completions", chatRouter);
-  app.use("/v1/completions", completionsRouter);
-  app.use("/v1", miscRouter);
+  for (const base of ["/v1", "/hermes/v1"]) {
+    app.use(base, authMiddleware, logger);
+    app.use(base + "/chat/completions", chatRouter);
+    app.use(base + "/completions", completionsRouter);
+    app.use(base, miscRouter);
+  }
   app.use((_req, res) =>
     res.status(404).json({
       error: { message: "Unknown endpoint", type: "invalid_request_error" },

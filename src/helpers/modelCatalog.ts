@@ -222,7 +222,30 @@ export class ModelCatalog {
       return structuredClone({ ...this.snapshot, stale: !!this.failure });
     throw this.failure || unavailable();
   }
-  async resolve(requested: unknown): Promise<string> {
+  async resolve(
+    requested: unknown,
+    allowDisplayNames = false,
+  ): Promise<string> {
+    if (
+      allowDisplayNames &&
+      typeof requested === "string" &&
+      requested.length <= 160 &&
+      !/[\x00-\x1f\x7f]/.test(requested)
+    ) {
+      const models = (await this.get()).models;
+      if (models.some((model) => model.id === requested)) return requested;
+      const matches = models.filter((model) => model.label === requested);
+      if (
+        matches.length === 1 &&
+        !["constructor", "__proto__", "prototype"].includes(requested)
+      )
+        return matches[0]!.id;
+      throw new ProxyError(
+        "Choose an unambiguous model name from /hermes/v1/models",
+        400,
+        "model_not_found",
+      );
+    }
     const id = requested === undefined ? "auto" : requested;
     if (
       typeof id !== "string" ||

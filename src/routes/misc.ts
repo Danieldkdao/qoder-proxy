@@ -3,7 +3,7 @@ import config from "../config";
 import { checkQoderCli, processStats } from "../helpers/spawn";
 import { modelCatalog } from "../helpers/modelCatalog";
 export const miscRouter = Router();
-miscRouter.get("/models", (_req, res, next) => {
+miscRouter.get("/models", (req, res, next) => {
   res.set("Cache-Control", "no-store");
   modelCatalog
     .get(true)
@@ -12,7 +12,7 @@ miscRouter.get("/models", (_req, res, next) => {
       res.json({
         object: "list",
         data: catalog.models.map((model) => ({
-          id: model.id,
+          id: req.baseUrl === "/hermes/v1" ? model.label : model.id,
           object: "model",
           created: Math.floor(catalog.fetchedAt / 1000),
           owned_by: "qoder",

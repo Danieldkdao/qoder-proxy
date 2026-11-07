@@ -525,20 +525,37 @@ describe("HTTP / Hermes provider contract", () => {
     for (const model of ["api_only", "constructor", "__proto__", "not-a-model"])
       expect((await request({ model, messages })).status).toBe(400);
   });
-  it("serves names to Hermes while translating completions to canonical CLI IDs",async()=>{
-    const url=base+"/hermes/v1";
-    expect((await fetch(url+"/models")).status).toBe(401);
-    const response=await fetch(url+"/models",{headers:{Authorization:"Bearer test-key"}});
+  it("serves names to Hermes while translating completions to canonical CLI IDs", async () => {
+    const url = base + "/hermes/v1";
+    expect((await fetch(url + "/models")).status).toBe(401);
+    const response = await fetch(url + "/models", {
+      headers: { Authorization: "Bearer test-key" },
+    });
     expect(response.status).toBe(200);
-    const data=await response.json();
-    expect(data.data.map((m:any)=>m.id)).toEqual(["Auto","Next Generation"]);
+    const data = await response.json();
+    expect(data.data.map((m: any) => m.id)).toEqual([
+      "Auto",
+      "Next Generation",
+    ]);
     expect(data.data[1].qoder.id).toBe("next_generation");
-    const answer=await fetch(url+"/chat/completions",{method:"POST",headers:{Authorization:"Bearer test-key","Content-Type":"application/json"},body:JSON.stringify({model:"Next Generation",messages:[{role:"user",content:"REPORT_MODEL"}]})});
+    const answer = await fetch(url + "/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer test-key",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "Next Generation",
+        messages: [{ role: "user", content: "REPORT_MODEL" }],
+      }),
+    });
     expect(answer.status).toBe(200);
-    const body=await answer.json();
+    const body = await answer.json();
     expect(body.model).toBe("Next Generation");
     expect(body.choices[0].message.content).toBe("CLI_MODEL=next_generation");
-    expect((await request({model:"Next Generation",messages})).status).toBe(400);
+    expect((await request({ model: "Next Generation", messages })).status).toBe(
+      400,
+    );
   });
   it("does not advertise misleading OpenAI and Claude model aliases", async () => {
     const response = await fetch(base + "/v1/models", {
