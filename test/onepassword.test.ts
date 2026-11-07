@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 const require = createRequire(import.meta.url);
 
 describe("1Password runtime-only secret delivery", () => {
-  it("provides an Environment ID template for every public npm command", () => {
+  it("provides an Environment ID template for every public pnpm command", () => {
     const pkg = JSON.parse(readFileSync("package.json", "utf8"));
     for (const [task, command] of Object.entries(pkg.scripts) as [
       string,

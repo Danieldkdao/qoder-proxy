@@ -16,3 +16,6 @@ nul
 dist/
 coverage/
 .env.*
+
+pnpm-debug.log*
+.pnpm-store/

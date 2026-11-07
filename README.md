@@ -4,31 +4,31 @@ A TypeScript OpenAI Chat Completions adapter for Qoder CLI, intended for a priva
 
 ## Requirements and quick start
 
-- Node.js 22.18+ (Node 24 recommended), npm, and Qoder CLI **1.1.84**.
+- Node.js 22.18+ (Node 24 recommended), pnpm **12.18.0**, and Qoder CLI **1.1.84**.
 - A Qoder personal access token and sufficient account credits.
 
 ```sh
-npm ci
+pnpm install --frozen-lockfile
 # Authorize 1Password CLI access; this checkout already has your Environment ID.
-npm test
-npm run docker:build
-npm run docker:start
-npm run proxy:check
-npm run hermes:test
+pnpm test
+pnpm run docker:build
+pnpm run docker:start
+pnpm run proxy:check
+pnpm run hermes:test
 ```
 
 Follow [the complete 1Password setup and environment-variable guide](docs/1password-setup.md). No application `.env` file is read. Every public package script uses `op run --environment umcywiy3b7hzpi2ln4zqrcywi4`; build/test/format subprocesses receive a minimal, non-secret environment. CI invokes the internal task runner directly and does not require 1Password credentials.
 
-`npm test` (after authorizing 1Password CLI) builds the server and browser TypeScript before running Vitest. `npm run typecheck` checks types without emitting. `npm run format:check` checks formatting. `npm run dev` rebuilds the server/browser on changes and restarts the server. Generated JavaScript lives in ignored `dist/`; edit the `.ts` source.
+`pnpm test` (after authorizing 1Password CLI) builds the server and browser TypeScript before running Vitest. `pnpm run typecheck` checks types without emitting. `pnpm run format:check` checks formatting. `pnpm run dev` rebuilds the server/browser on changes and restarts the server. Generated JavaScript lives in ignored `dist/`; edit the `.ts` source.
 
 ## Docker
 
 ```sh
-npm run docker:build
-npm run docker:start
-npm run docker:status
+pnpm run docker:build
+pnpm run docker:start
+pnpm run docker:status
 # Recreate with fresh secrets after a rotation or Docker/Mac restart:
-npm run docker:restart
+pnpm run docker:restart
 ```
 
 The secure launcher transmits an allowlisted payload over stdin. Secret values are not saved in Docker `Config.Env`, image layers, argv, or env files. The running process and Docker/host administrators still have access to runtime secrets. Automatic Docker restart is disabled because it cannot restore the in-memory payload without reauthorizing 1Password. See the setup guide for lifecycle and SSH details.
@@ -121,4 +121,12 @@ CI runs tests before publishing AMD64/ARM64 images into the fork's own GHCR name
 
 For automatic recovery after macOS login using a scoped 1Password service account and Keychain, see [automatic startup](docs/autostart.md).
 
-Use `npm run qoder:check` for a read-only CLI release and QoDuck discovery check. See [availability checks and thinking efforts](docs/availability-and-reasoning.md) for per-model reasoning controls.
+Use `pnpm run qoder:check` for a read-only CLI release and QoDuck discovery check. See [availability checks and thinking efforts](docs/availability-and-reasoning.md) for per-model reasoning controls.
+
+## Package manager
+
+Use **pnpm 12.18.0**, pinned in `package.json`. Install with
+`pnpm install --frozen-lockfile`; commit `pnpm-lock.yaml` when dependencies change.
+Do not generate `package-lock.json` or use npm/yarn to install this project.
+`pnpm-workspace.yaml` explicitly approves the required dependency build scripts;
+review any new approvals instead of enabling all dependency scripts.

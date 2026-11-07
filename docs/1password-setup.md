@@ -37,11 +37,11 @@ The underlying task entry point also exists for secret-free CI, container builds
 
 ```sh
 cd ~/Desktop/qoder-proxy
-npm ci
-npm test
-npm run docker:build
-npm run docker:start
-npm run docker:status
+pnpm install --frozen-lockfile
+pnpm test
+pnpm run docker:build
+pnpm run docker:start
+pnpm run docker:status
 ```
 
 `docker:start` creates the managed container `qoder-proxy`, published only at **127.0.0.1:17843**. It refuses to overwrite an unrelated container with the same name. The default image is `qoder-proxy:local`.
@@ -49,7 +49,7 @@ npm run docker:status
 Test authenticated Qoder inference and a function-call/result/final-answer exchange:
 
 ```sh
-npm run proxy:check
+pnpm run proxy:check
 ```
 
 This makes real model requests and consumes Qoder credits. A healthy `/health` endpoint alone does not prove the PAT or model is authorized.
@@ -57,7 +57,7 @@ This makes real model requests and consumes Qoder credits. A healthy `/health` e
 ## 4. Connect Hermes and verify actual tool execution
 
 ```sh
-npm run hermes:test
+pnpm run hermes:test
 ```
 
 This launches the **installed Hermes CLI** with an isolated temporary profile. Hermes connects to the proxy, asks Qoder to use its terminal tool, writes a random marker into a temporary proof file, consumes the tool result, and returns a final answer. The script checks both the file and answer, then removes the temporary profile/workspace.
@@ -67,13 +67,13 @@ The test uses Hermes's one-shot mode, which auto-approves tools. Its prompt is f
 The separate non-secret profile is already configured on this Mini. To prepare it explicitly on another checkout:
 
 ```sh
-npm run hermes:configure
+pnpm run hermes:configure
 ```
 
 For normal chat:
 
 ```sh
-npm run hermes:chat
+pnpm run hermes:chat
 ```
 
 The first invocation creates a dedicated, non-secret config at `~/.hermes-qoder-proxy/config.yaml`. It uses `provider: custom`, model `auto`, the loopback proxy URL, and `key_env: PROXY_API_KEY`. It does not save the key in YAML and does not replace your existing Hermes configuration. Future chats use that separate profile, with its own history. Existing profile configuration is preserved.
@@ -98,15 +98,15 @@ Some CLI options and model capabilities are intentionally unsupported; see READM
 ## 5. Stop, reload secrets, or recover after reboot
 
 ```sh
-npm run docker:stop
-npm run docker:start
+pnpm run docker:stop
+pnpm run docker:start
 # Or, when the managed container already exists:
-npm run docker:restart
+pnpm run docker:restart
 ```
 
 `docker:restart` **recreates** the managed container and injects fresh secrets from 1Password. Editing a value in 1Password does not change a running process. After a PAT rotation, recreate the container. After rotating `PROXY_API_KEY`, restart your Hermes process too.
 
-Docker automatic restart is deliberately disabled for this workflow. Secret values exist only in process memory and are not saved in container configuration. A plain `docker start`/`docker restart` cannot restore them; the bootstrap fails closed without fresh input. After restarting Docker or the Mini, use `npm run docker:restart` with authorized 1Password access. For unattended recovery after login, install the [Keychain-backed macOS startup agent](autostart.md). It authenticates with a scoped service account and recreates the container with fresh stdin delivery. Keep Docker's own restart policy disabled.
+Docker automatic restart is deliberately disabled for this workflow. Secret values exist only in process memory and are not saved in container configuration. A plain `docker start`/`docker restart` cannot restore them; the bootstrap fails closed without fresh input. After restarting Docker or the Mini, use `pnpm run docker:restart` with authorized 1Password access. For unattended recovery after login, install the [Keychain-backed macOS startup agent](autostart.md). It authenticates with a scoped service account and recreates the container with fresh stdin delivery. Keep Docker's own restart policy disabled.
 
 Emergency stop without a fresh 1Password authorization is available as `node scripts/tasks.mts docker:stop`. It only removes a container bearing this project's management label.
 

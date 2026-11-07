@@ -1,0 +1,5 @@
+overrides:
+  qs: ^6.17.1
+allowBuilds:
+  esbuild: true
+  rolldown: true

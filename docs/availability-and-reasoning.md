@@ -5,7 +5,7 @@
 From the repository on the Mini:
 
 ```sh
-npm run qoder:check
+pnpm run qoder:check
 ```
 
 The package command includes your configured 1Password Environment ID. It reads the Dockerfile pin, npm's published stable dist-tag, the official standalone installer channel manifest, the live account model API, and `--list-models` from the CLI in the existing `qoder-proxy` container. `QODER_CONTAINER_NAME` selects another existing container if needed. It never installs or executes a newer CLI, edits the pin, builds an image, starts/recreates a container, restarts the proxy or sends paid inference requests. The CLI listing uses an isolated temporary HOME/cwd inside the container and removes that state afterwards.
@@ -63,7 +63,7 @@ Live preview requests verified low effort on Qwen3.8-Max and DeepSeek-Flash, and
 ## Verification on November 6, 2026
 
 - 87 Vitest tests, three Docker secret-isolation integration tests, strict TypeScript and formatting passed. New regression tests were observed failing before their implementations.
-- The public `npm run qoder:check` command completed with readable version/status output and left the production container ID and start time unchanged. Both published stable channels and the pinned/running CLI reported 1.1.84; QoDuck was absent from both live catalogs.
+- The public `pnpm run qoder:check` command completed with readable version/status output and left the production container ID and start time unchanged. Both published stable channels and the pinned/running CLI reported 1.1.84; QoDuck was absent from both live catalogs.
 - The isolated reasoning preview passed low-effort inference on Qwen3.8-Max and DeepSeek-Flash and thinking-off inference on DeepSeek-Flash; unsupported levels returned 400.
 - After explicit deployment approval, production was recreated through the existing Keychain/1Password startup agent and became healthy at 127.0.0.1:17843. The CLI pin was not changed.
 - The existing gateway's real model-picker RPC exposes reasoning for the 12 models with advertised effort levels, and hides it for Auto, Fast and Efficient. A real Hermes session using DeepSeek-Flash with `--reasoning low` executed its terminal tool, created/read a random temporary proof file and returned the verified final answer.

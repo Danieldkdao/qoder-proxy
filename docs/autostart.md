@@ -20,7 +20,7 @@ At recovery, the agent captures the token in host process memory and supplies `O
 
 ## Install, inspect and remove
 
-Run from the repository after building the image and TypeScript application. These internal commands intentionally avoid the public npm wrappers, so agent installation/status do not themselves request desktop 1Password authorization:
+Run from the repository after building the image and TypeScript application. These internal commands intentionally avoid the public pnpm wrappers, so agent installation/status do not themselves request desktop 1Password authorization:
 
 ```sh
 node scripts/tasks.mts build
@@ -28,7 +28,7 @@ node scripts/tasks.mts autostart:install
 node scripts/tasks.mts autostart:status
 ```
 
-Public `npm run autostart:install`, `autostart:status`, and `autostart:uninstall` also exist and include the configured Environment ID, consistently with all other package commands. Those wrappers authenticate with 1Password first.
+Public `pnpm run autostart:install`, `autostart:status`, and `autostart:uninstall` also exist and include the configured Environment ID, consistently with all other package commands. Those wrappers authenticate with 1Password first.
 
 The installer copies the small runtime launcher and environment validator into `~/Library/Application Support/Qoder Proxy/autostart`, with private permissions. It does not run code from Desktop at login. The image remains in Docker's local image store. Reinstall the agent after changing launcher/validator code or the Environment ID. Rebuild `qoder-proxy:local` and recreate the container when changing application code. Node, Docker Desktop and the 1Password CLI must remain installed at the executable locations recorded in `settings.json`; reinstall the agent after moving them.
 
