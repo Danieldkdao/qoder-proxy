@@ -164,3 +164,49 @@ describe("container runtime prerequisites", () => {
     );
   });
 });
+
+it("captures native MCP requests and stops the CLI without executing a client tool", async () => {
+  config.QODER_TIMEOUT_MS = 2000;
+  config.QODERCLI_BIN = binary(`
+ const fs=require('node:fs');const {spawn}=require('node:child_process');const {createInterface}=require('node:readline');
+ process.stdin.resume();process.stdin.on('end',()=>{
+  const args=process.argv.slice(2);const path=args[args.indexOf('--mcp-config')+1];if(!path||!fs.existsSync(path))process.exit(7);
+  const server=JSON.parse(fs.readFileSync(path,'utf8')).mcpServers.hermes;
+  if(!args[args.indexOf('--tools')+1].startsWith('mcp__hermes__'))process.exit(8);
+  const child=spawn(server.command,server.args,{env:{...process.env,...server.env},stdio:['pipe','pipe','pipe']});
+  createInterface({input:child.stdout}).on('line',line=>{const r=JSON.parse(line);if(r.id===1)child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/call',params:{name:r.result.tools[0].name,arguments:{command:'echo native request'}}})+'\\n');});
+  child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})+'\\n');setInterval(()=>{},1000);
+ });`);
+  const before = runner.processStats().nativeToolCalls ?? 0;
+  const result = await runner.runQoder(
+    "native client request",
+    "auto",
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    {
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "terminal",
+            parameters: {
+              type: "object",
+              properties: { command: { type: "string" } },
+              required: ["command"],
+              additionalProperties: false,
+            },
+          },
+        },
+      ],
+      choice: "required",
+      parallel: false,
+    },
+  );
+  expect(result.toolCalls).toEqual([
+    { name: "terminal", arguments: { command: "echo native request" } },
+  ]);
+  expect(result.finishReason).toBe("tool_calls");
+  expect(runner.processStats().nativeToolCalls).toBe(before + 1);
+});

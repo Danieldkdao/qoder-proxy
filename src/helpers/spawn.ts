@@ -6,7 +6,8 @@ import { StringDecoder } from "node:string_decoder";
 import config from "../config";
 import { ProxyError } from "../errors";
 import { extractTextContent, normalizeFinishReason } from "./format";
-import type { QoderResult } from "../types";
+import { prepareNativeTools, type NativeToolOptions } from "./nativeTools";
+import type { QoderResult, ParsedCall } from "../types";
 
 interface Waiter {
   start: () => void;
@@ -75,7 +76,9 @@ class Admission {
 }
 const admission = new Admission();
 const children = new Set<ChildProcess>();
+let nativeToolCalls = 0;
 export const processStats = () => ({
+  nativeToolCalls,
   active: admission.active,
   queued: admission.queue.length,
 });
@@ -222,6 +225,7 @@ export async function runQoder(
   onText?: (text: string) => Promise<void>,
   outputTokens = config.QODER_MAX_OUTPUT_TOKENS,
   reasoningEffort?: string,
+  nativeOptions?: NativeToolOptions,
 ): Promise<QoderResult> {
   if (Buffer.byteLength(prompt) > config.MAX_PROMPT_BYTES)
     throw new ProxyError(
@@ -243,6 +247,7 @@ export async function runQoder(
       onText,
       outputTokens,
       reasoningEffort,
+      nativeOptions,
     );
   } finally {
     if (cwd) await rm(cwd, { recursive: true, force: true });
@@ -257,6 +262,7 @@ async function execute(
   onText: ((text: string) => Promise<void>) | undefined,
   outputTokens: string,
   reasoningEffort?: string,
+  nativeOptions?: NativeToolOptions,
 ): Promise<QoderResult> {
   // stdin avoids ARG_MAX and process-list disclosure. Isolated HOME/cwd and
   // disabled built-ins keep Hermes responsible for executing external tools.
@@ -288,6 +294,21 @@ async function execute(
         : ["--reasoning-effort", reasoningEffort]),
     );
   }
+  const bridge =
+    nativeOptions?.tools.length && nativeOptions.choice !== "none"
+      ? await prepareNativeTools(cwd, nativeOptions)
+      : undefined;
+  if (bridge) {
+    args[args.indexOf("--tools") + 1] = bridge.names.join(",");
+    args.push(
+      "--mcp-config",
+      bridge.configPath,
+      "--allowed-mcp-server-names",
+      "hermes",
+      "--allowed-tools",
+      bridge.names.join(","),
+    );
+  }
   const child = spawn(config.QODERCLI_BIN, args, {
     cwd,
     env: childEnvironment(cwd),
@@ -297,6 +318,7 @@ async function execute(
   });
   children.add(child);
   let failure: Error | undefined;
+  let captured: ParsedCall[] = [];
   let forceTimer: ReturnType<typeof setTimeout> | undefined;
   const cancel = (error: Error) => {
     if (failure) return;
@@ -344,8 +366,38 @@ async function execute(
     text += piece;
     if (onText) await onText(piece);
   };
+  let polling = false;
+  const poll = async () => {
+    if (!bridge || polling || captured.length || failure) return;
+    polling = true;
+    try {
+      const calls = await bridge.readCalls(config.MAX_OUTPUT_BYTES);
+      if (calls.length) {
+        captured = calls;
+        nativeToolCalls += calls.length;
+        clearTimeout(timeout);
+        terminate(child, "SIGTERM");
+        forceTimer = setTimeout(() => terminate(child, "SIGKILL"), 250);
+        forceTimer.unref();
+      }
+    } catch (error) {
+      cancel(
+        error instanceof Error
+          ? error
+          : new ProxyError("Invalid captured tool request", 502),
+      );
+    } finally {
+      polling = false;
+    }
+  };
+  let activePoll: Promise<void> | undefined;
+  const captureTimer = bridge
+    ? setInterval(() => {
+        activePoll = poll();
+      }, 15)
+    : undefined;
   const parse = async (line: string) => {
-    if (!line.trim()) return;
+    if (!line.trim() || captured.length) return;
     let event: Record<string, unknown>;
     try {
       event = JSON.parse(line) as Record<string, unknown>;
@@ -424,11 +476,16 @@ async function execute(
     );
   }
   const code = await closed;
+  if (captureTimer) clearInterval(captureTimer);
+  if (activePoll) await activePoll;
+  await poll();
   clearTimeout(timeout);
   if (forceTimer) clearTimeout(forceTimer);
   signal?.removeEventListener("abort", abort);
   children.delete(child);
   if (failure) throw failure;
+  if (captured.length)
+    return { text: "", finishReason: "tool_calls", toolCalls: captured };
   if (code !== 0)
     throw new ProxyError(
       "Qoder CLI exited unsuccessfully",

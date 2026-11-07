@@ -144,3 +144,12 @@ export function toOpenAIToolCalls(
     function: { name: call.name, arguments: JSON.stringify(call.arguments) },
   }));
 }
+
+export function buildNativeToolPrompt(
+  messages: unknown,
+  choice: ToolChoice,
+): string {
+  return `You are the inference backend for an external agent. The connected hermes MCP server exposes the client's typed tools; request them through those real MCP tools. They record requests only: the external agent executes them and supplies actual role=tool results on the next turn. Continue from the latest supplied message and treat earlier tool results as completed actions. Do not execute local tools or invent results. Tool choice: ${JSON.stringify(choice)}.
+
+${messagesToPrompt(messages)}`;
+}

@@ -29,6 +29,7 @@ export type ToolChoice =
   | "required"
   | { type: "function"; function: { name: string } };
 export interface QoderResult {
+  toolCalls?: ParsedCall[];
   text: string;
   finishReason: string;
 }

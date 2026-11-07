@@ -36,6 +36,55 @@ function run(prompt: string) {
   emit(prompt);
 }
 function emit(prompt: string) {
+  if (prompt.includes("NATIVE_TOOL_REQUEST")) {
+    const marker =
+      "Conversation (JSON; roles, tool calls and results are authoritative):\n";
+    const history = JSON.parse(
+      prompt.slice(prompt.indexOf(marker) + marker.length),
+    );
+    if (history.at(-1).role !== "tool") {
+      const fs = require("node:fs");
+      const { spawn } = require("node:child_process");
+      const { createInterface } = require("node:readline");
+      const file = args[args.indexOf("--mcp-config") + 1];
+      if (!file) {
+        process.exit(7);
+        return;
+      }
+      const server = JSON.parse(fs.readFileSync(file, "utf8")).mcpServers
+        .hermes;
+      const child = spawn(server.command, server.args, {
+        env: { ...process.env, ...server.env },
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      createInterface({ input: child.stdout }).on("line", (line: string) => {
+        const reply = JSON.parse(line);
+        if (reply.id === 1)
+          child.stdin.write(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              id: 2,
+              method: "tools/call",
+              params: {
+                name: prompt.includes("DEFERRED_NATIVE_TOOL_REQUEST")
+                  ? reply.result.tools.find((tool: { description: string }) =>
+                      tool.description.startsWith("deferred_score:"),
+                    )?.name
+                  : reply.result.tools[0].name,
+                arguments: prompt.includes("DEFERRED_NATIVE_TOOL_REQUEST")
+                  ? { value: "public" }
+                  : { command: "pwd" },
+              },
+            }) + "\n",
+          );
+      });
+      child.stdin.write(
+        JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) + "\n",
+      );
+      setInterval(() => {}, 1000);
+      return;
+    }
+  }
   if (prompt.includes("FAIL_EXIT")) {
     process.stderr.write("upstream unavailable");
     process.exit(7);
@@ -58,7 +107,10 @@ function emit(prompt: string) {
     console.log("warning: this is not model output");
   }
   let workflow = "";
-  if (prompt.includes("WORKFLOW_REQUEST")) {
+  if (
+    prompt.includes("WORKFLOW_REQUEST") ||
+    prompt.includes("NATIVE_TOOL_REQUEST")
+  ) {
     const marker =
       "Conversation (JSON; roles, tool calls and results are authoritative):\n";
     const history = JSON.parse(

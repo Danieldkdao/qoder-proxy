@@ -706,3 +706,133 @@ it("delivers an explicit none decision to the CLI instead of dropping it", async
     "CHOICE=none",
   );
 });
+
+describe("native MCP to OpenAI transport", () => {
+  for (const prefix of ["/v1", "/hermes/v1"])
+    for (const stream of [false, true]) {
+      it(`captures a real MCP request and consumes its external result through ${prefix}, stream=${stream}`, async () => {
+        const history: any[] = [
+          { role: "user", content: "NATIVE_TOOL_REQUEST" },
+        ];
+        const response = await request(
+          {
+            model: prefix === "/v1" ? "auto" : "Auto",
+            messages: history,
+            tools,
+            tool_choice: "required",
+            stream,
+          },
+          {},
+          prefix,
+        );
+        expect(response.status).toBe(200);
+        let message: any;
+        if (stream) {
+          const chunks = events(await response.text());
+          const call = chunks.flatMap(
+            (c) => c.choices?.[0]?.delta?.tool_calls ?? [],
+          )[0];
+          const { index, ...toolCall } = call;
+          message = {
+            role: "assistant",
+            content: null,
+            tool_calls: [toolCall],
+          };
+          expect(
+            chunks.some((c) => c.choices?.[0]?.finish_reason === "tool_calls"),
+          ).toBe(true);
+        } else {
+          const body = await response.json();
+          message = body.choices[0].message;
+          expect(body.choices[0].finish_reason).toBe("tool_calls");
+        }
+        expect(message.tool_calls[0].function).toEqual({
+          name: "terminal",
+          arguments: '{"command":"pwd"}',
+        });
+        history.push(message, {
+          role: "tool",
+          tool_call_id: message.tool_calls[0].id,
+          content: "working dir: /project",
+        });
+        const final = await request(
+          {
+            model: prefix === "/v1" ? "auto" : "Auto",
+            messages: history,
+            tools,
+            tool_choice: "none",
+          },
+          {},
+          prefix,
+        );
+        expect(final.status).toBe(200);
+        expect((await final.json()).choices[0].message.content).toBe(
+          "WORKFLOW_DONE",
+        );
+      });
+    }
+});
+
+it("presents described deferred tools natively while forwarding execution through the declared bridge", async () => {
+  const bridge = {
+    type: "function",
+    function: {
+      name: "tool_call",
+      parameters: {
+        type: "object",
+        properties: { calls: { type: "array" } },
+        required: ["calls"],
+      },
+    },
+  };
+  const describe = {
+    type: "function",
+    function: {
+      name: "tool_describe",
+      parameters: {
+        type: "object",
+        properties: { names: { type: "array", items: { type: "string" } } },
+        required: ["names"],
+      },
+    },
+  };
+  const history = [
+    {
+      role: "assistant",
+      content: null,
+      tool_calls: [
+        {
+          id: "describe-one",
+          type: "function",
+          function: {
+            name: "tool_describe",
+            arguments: '{"names": ["deferred_score"]}',
+          },
+        },
+      ],
+    },
+    {
+      role: "tool",
+      tool_call_id: "describe-one",
+      content:
+        '{"tools": {"deferred_score": {"description": "Read a public score", "parameters": {"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]}}}}',
+    },
+    { role: "user", content: "DEFERRED_NATIVE_TOOL_REQUEST" },
+  ];
+  const response = await request(
+    {
+      model: "Auto",
+      messages: history,
+      tools: [bridge, describe],
+      tool_choice: "required",
+    },
+    {},
+    "/hermes/v1",
+  );
+  expect(response.status).toBe(200);
+  const call = (await response.json()).choices[0].message.tool_calls[0];
+  expect(call.function.name).toBe("tool_call");
+  expect(JSON.parse(call.function.arguments)).toEqual({
+    calls: [{ name: "deferred_score", arguments: { value: "public" } }],
+  });
+});

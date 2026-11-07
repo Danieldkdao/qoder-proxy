@@ -13,6 +13,7 @@ import {
 import {
   buildPromptWithTools,
   parseToolCallFromText,
+  buildNativeToolPrompt,
   toOpenAIToolCalls,
   validateChoice,
   validateTools,
@@ -114,8 +115,9 @@ export async function handleChat(
           : canonicalModel,
       id = newId(legacy ? "cmpl" : "chatcmpl");
     const enabled = tools.length > 0 && choice !== "none";
-    const prompt =
-      tools.length > 0
+    const prompt = enabled
+      ? buildNativeToolPrompt(messages, choice)
+      : tools.length > 0
         ? buildPromptWithTools(messages, tools, messagesToPrompt, choice)
         : messagesToPrompt(messages);
     const streaming = body.stream === true;
@@ -160,8 +162,23 @@ export async function handleChat(
         : undefined,
       limit === 32000 ? "32k" : limit === 16000 ? "16k" : undefined,
       effort,
+      enabled
+        ? {
+            tools,
+            choice,
+            parallel: body.parallel_tool_calls !== false,
+            messages,
+          }
+        : undefined,
     );
-    const parsed = enabled ? parseToolCallFromText(result.text, tools) : null;
+    const parsed = enabled
+      ? result.toolCalls?.length
+        ? parseToolCallFromText(
+            JSON.stringify({ tool_calls: result.toolCalls }),
+            tools,
+          )
+        : parseToolCallFromText(result.text, tools)
+      : null;
     const calls = parsed ? toOpenAIToolCalls(parsed) : undefined;
     if (body.parallel_tool_calls === false && calls && calls.length > 1)
       throw new ProxyError(
