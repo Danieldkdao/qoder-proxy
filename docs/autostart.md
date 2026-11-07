@@ -50,3 +50,14 @@ Uninstall retains the running container, image, and Keychain credential. Remove 
 ## Verification
 
 Vitest covers healthy no-op behavior, missing-container recovery, Docker startup, unmanaged-container refusal, health grace periods, secret routing, sanitized failures and the generated login-agent plist. A real recovery test stops the managed proxy, triggers the installed LaunchAgent and verifies the replacement container reaches healthy status. This briefly interrupts the endpoint. A reboot test requires an actual reboot and graphical login; do not equate a recovery test with having tested a reboot.
+
+### Verified on this Mac Mini, November 6, 2026
+
+- 58 Vitest tests and three Docker isolation integration tests passed, with strict TypeScript and formatting checks.
+- Installed plist passed `plutil -lint`; runtime directory mode is 0700 and settings/plist mode is 0600.
+- Repeated Keychain reads and headless service-account Environment validation succeeded without further prompts after granting access.
+- Stopped the production managed container and triggered the installed LaunchAgent. It recreated a different container ID and reached healthy status using fresh stdin-delivered secrets.
+- The recovered endpoint passed a live authenticated Qoder tool-call/result/final-answer roundtrip.
+- GitHub tests and AMD64/ARM64 image publishing passed for implementation commit `e660898`: [verification run](https://github.com/Danieldkdao/qoder-proxy/actions/runs/42323032189).
+
+An actual reboot was not performed. Startup still requires graphical login and an unlocked login Keychain. Token expiration/revocation or removed Environment access requires updating the Keychain credential/permissions.
