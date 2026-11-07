@@ -118,3 +118,5 @@ Tests were committed before implementation. The original 33-test contract baseli
 These tests do not call paid models or prove production quality for every Qoder model. Live Hermes acceptance requires your PAT and installed Hermes configuration. CLI and upstream behavior can change; test upgrades before updating the pinned version.
 
 CI runs tests before publishing AMD64/ARM64 images into the fork's own GHCR namespace. MIT license; retain the existing notice.
+
+For automatic recovery after macOS login using a scoped 1Password service account and Keychain, see [automatic startup](docs/autostart.md).

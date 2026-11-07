@@ -106,7 +106,7 @@ npm run docker:restart
 
 `docker:restart` **recreates** the managed container and injects fresh secrets from 1Password. Editing a value in 1Password does not change a running process. After a PAT rotation, recreate the container. After rotating `PROXY_API_KEY`, restart your Hermes process too.
 
-Docker automatic restart is deliberately disabled for this workflow. Secret values exist only in process memory and are not saved in container configuration. A plain `docker start`/`docker restart` cannot restore them; the bootstrap fails closed without fresh input. After restarting Docker or the Mini, use `npm run docker:restart` with authorized 1Password access. Do not add `--restart unless-stopped` without also implementing a host-side authenticated supervisor.
+Docker automatic restart is deliberately disabled for this workflow. Secret values exist only in process memory and are not saved in container configuration. A plain `docker start`/`docker restart` cannot restore them; the bootstrap fails closed without fresh input. After restarting Docker or the Mini, use `npm run docker:restart` with authorized 1Password access. For unattended recovery after login, install the [Keychain-backed macOS startup agent](autostart.md). It authenticates with a scoped service account and recreates the container with fresh stdin delivery. Keep Docker's own restart policy disabled.
 
 Emergency stop without a fresh 1Password authorization is available as `node scripts/tasks.mts docker:stop`. It only removes a container bearing this project's management label.
 

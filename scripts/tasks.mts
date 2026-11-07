@@ -56,6 +56,10 @@ async function main(): Promise<void> {
     await dockerTask(task.slice(7));
     return;
   }
+  if (task?.startsWith("autostart:")) {
+    await (await import("./autostart.mts")).autostartTask(task.slice(10));
+    return;
+  }
   switch (task) {
     case "build":
       node("scripts/build.mts");

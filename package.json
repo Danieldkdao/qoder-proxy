@@ -21,7 +21,10 @@
     "hermes:test": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:test",
     "hermes:chat": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:chat",
     "test:docker": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts test:docker",
-    "hermes:configure": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:configure"
+    "hermes:configure": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts hermes:configure",
+    "autostart:install": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:install",
+    "autostart:status": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:status",
+    "autostart:uninstall": "op run --environment umcywiy3b7hzpi2ln4zqrcywi4 -- node scripts/tasks.mts autostart:uninstall"
   },
   "keywords": [
     "qoder",
