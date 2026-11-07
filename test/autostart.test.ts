@@ -15,7 +15,7 @@ const settings: Settings = {
   bundle: "/Users/test-user/Library/Application Support/Qoder Proxy/autostart",
   image: "qoder-proxy:local",
   name: "qoder-proxy",
-  port: 3000,
+  port: 17843,
 };
 function fixture(status = "running", health = "healthy", managed = true) {
   const calls: { file: string; args: string[]; env: NodeJS.ProcessEnv }[] = [];
@@ -40,6 +40,7 @@ describe("unattended startup", () => {
     const f = fixture("missing");
     expect((await tick(settings, {}, f.run)).state).toBe("started");
     const op = f.calls.find((c) => c.file === settings.op)!;
+    expect(op.env.QODER_HOST_PORT).toBe("17843");
     expect(op.env.OP_SERVICE_ACCOUNT_TOKEN).toBe("SYNTHETIC_BOOTSTRAP_TOKEN");
     expect(op.args).toEqual([
       "run",

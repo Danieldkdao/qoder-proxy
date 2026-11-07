@@ -16,6 +16,13 @@ describe("1Password runtime-only secret delivery", () => {
       expect(command).not.toContain("--no-masking");
     }
   });
+  it("uses the same nonstandard host port by default while accepting an explicit override", async () => {
+    const { containerOptions, createArguments } = await import("../scripts/docker.mts");
+    expect(containerOptions({}).port).toBe(17843);
+    expect(containerOptions({QODER_HOST_PORT: "19876"}).port).toBe(19876);
+    expect(createArguments(containerOptions({}))).toContain("127.0.0.1:17843:3000");
+    expect(() => createArguments(containerOptions({QODER_HOST_PORT: "invalid"}))).toThrow();
+  });
   it("ignores physical dotenv files", () => {
     const dir = mkdtempSync(join(tmpdir(), "qoder-no-dotenv-"));
     try {
@@ -86,10 +93,10 @@ describe("1Password runtime-only secret delivery", () => {
     const args = createArguments({
       image: "qoder-proxy:local",
       name: "qoder-proxy",
-      port: 3000,
+      port: 17843,
     });
     expect(args).toContain("--interactive");
-    expect(args).toContain("127.0.0.1:3000:3000");
+    expect(args).toContain("127.0.0.1:17843:3000");
     expect(args).toContain("dist/bootstrap.js");
     expect(args).not.toContain("--env-file");
     expect(args).not.toContain("--env");
@@ -141,7 +148,7 @@ describe("1Password runtime-only secret delivery", () => {
       expect(config.model).toMatchObject({
         provider: "custom",
         key_env: "PROXY_API_KEY",
-        base_url: "http://127.0.0.1:3000/v1",
+        base_url: "http://127.0.0.1:17843/v1",
       });
       expect(config.model.api_key).toBeUndefined();
       writeFileSync(path, '{"userSetting":true}');
