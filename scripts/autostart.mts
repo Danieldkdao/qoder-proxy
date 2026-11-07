@@ -14,6 +14,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir, userInfo } from "node:os";
 
+import { containerOptions, createArguments } from "./docker.mts";
+
 const execute = promisify(execFile);
 const label = "com.qoder-proxy.autostart";
 const service = "com.qoder-proxy.1password.service-account";
@@ -265,10 +267,9 @@ export async function autostartTask(action: string): Promise<void> {
     docker: await locate("docker"),
     home,
     bundle,
-    image: "qoder-proxy:local",
-    name: "qoder-proxy",
-    port: 3000,
+    ...containerOptions(),
   };
+  createArguments(s);
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   // Validate build artifacts before modifying an existing installation.
   await access(join(root, "dist/runtime-env.js"));

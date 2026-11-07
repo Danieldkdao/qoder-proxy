@@ -17,11 +17,16 @@ describe("1Password runtime-only secret delivery", () => {
     }
   });
   it("uses the same nonstandard host port by default while accepting an explicit override", async () => {
-    const { containerOptions, createArguments } = await import("../scripts/docker.mts");
+    const { containerOptions, createArguments } =
+      await import("../scripts/docker.mts");
     expect(containerOptions({}).port).toBe(17843);
-    expect(containerOptions({QODER_HOST_PORT: "19876"}).port).toBe(19876);
-    expect(createArguments(containerOptions({}))).toContain("127.0.0.1:17843:3000");
-    expect(() => createArguments(containerOptions({QODER_HOST_PORT: "invalid"}))).toThrow();
+    expect(containerOptions({ QODER_HOST_PORT: "19876" }).port).toBe(19876);
+    expect(createArguments(containerOptions({}))).toContain(
+      "127.0.0.1:17843:3000",
+    );
+    expect(() =>
+      createArguments(containerOptions({ QODER_HOST_PORT: "invalid" })),
+    ).toThrow();
   });
   it("ignores physical dotenv files", () => {
     const dir = mkdtempSync(join(tmpdir(), "qoder-no-dotenv-"));

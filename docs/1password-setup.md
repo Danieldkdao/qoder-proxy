@@ -44,7 +44,7 @@ npm run docker:start
 npm run docker:status
 ```
 
-`docker:start` creates the managed container `qoder-proxy`, published only at **127.0.0.1:3000**. It refuses to overwrite an unrelated container with the same name. The default image is `qoder-proxy:local`.
+`docker:start` creates the managed container `qoder-proxy`, published only at **127.0.0.1:17843**. It refuses to overwrite an unrelated container with the same name. The default image is `qoder-proxy:local`.
 
 Test authenticated Qoder inference and a function-call/result/final-answer exchange:
 
@@ -84,7 +84,7 @@ To use an existing Hermes profile manually, add a custom Chat Completions provid
 model:
   provider: custom
   default: auto
-  base_url: http://127.0.0.1:3000/v1
+  base_url: http://127.0.0.1:17843/v1
   key_env: PROXY_API_KEY
   context_length: 64000
 agent:
@@ -185,7 +185,7 @@ These values affect the local task runner. They are **not** forwarded into the p
 | `ENVIRONMENT_ID`           | Placeholder in every package script. Replace with the copied 1Password Environment ID. It is an identifier, not a secret and not an automatically expanded shell variable.                                                                          |
 | `QODER_DOCKER_IMAGE`       | Default `qoder-proxy:local`. Image tag built and started by the Docker tasks. Use a tag you trust.                                                                                                                                                  |
 | `QODER_CONTAINER_NAME`     | Default `qoder-proxy`. Managed container name. Existing containers without the management label are never overwritten.                                                                                                                              |
-| `QODER_HOST_PORT`          | Default `3000`; valid 1–65535. Mac loopback port published to container port 3000. Changing it changes the default Hermes proxy URL too.                                                                                                            |
+| `QODER_HOST_PORT`          | Default `17843`; valid 1–65535. Mac loopback port published to container port 3000. Changing it changes the default Hermes proxy URL too.                                                                                                           |
 | `QODER_PROXY_BASE_URL`     | Default `http://127.0.0.1:QODER_HOST_PORT/v1`. Optional override for checks/Hermes. The helper accepts loopback HTTP URLs only; use an SSH tunnel for remote access.                                                                                |
 | `QODER_HERMES_MODEL`       | Default `auto`. Qoder model identifier used for the test/chat profile. It must be a model supported by the proxy and your Qoder account.                                                                                                            |
 | `QODER_HERMES_HOME`        | Interactive chat default `~/.hermes-qoder-proxy`. Separate Hermes profile location; use an absolute path if overriding. The test always uses a disposable profile.                                                                                  |

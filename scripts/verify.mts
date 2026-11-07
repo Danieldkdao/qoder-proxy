@@ -11,11 +11,12 @@ import {
 } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { containerOptions } from "./docker.mts";
 const execute = promisify(execFile);
 function endpoint(): string {
   const value =
     process.env.QODER_PROXY_BASE_URL ||
-    `http://127.0.0.1:${process.env.QODER_HOST_PORT || 3000}/v1`;
+    `http://127.0.0.1:${containerOptions().port}/v1`;
   const url = new URL(value);
   if (
     !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) ||

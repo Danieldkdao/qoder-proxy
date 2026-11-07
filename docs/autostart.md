@@ -61,3 +61,7 @@ Vitest covers healthy no-op behavior, missing-container recovery, Docker startup
 - GitHub tests and AMD64/ARM64 image publishing passed for implementation commit `e660898`: [verification run](https://github.com/Danieldkdao/qoder-proxy/actions/runs/42323032189).
 
 An actual reboot was not performed. Startup still requires graphical login and an unlocked login Keychain. Token expiration/revocation or removed Environment access requires updating the Keychain credential/permissions.
+
+## Host port
+
+Docker, the startup installer and Hermes commands share the host default **17843**. The container continues to listen internally on port 3000. Hermes connects to `http://127.0.0.1:17843/v1`. `QODER_HOST_PORT` overrides the host default when explicitly set. The installer records it in its private, non-secret `settings.json`; reinstall the agent after changing this setting. Existing Hermes profiles are deliberately preserved by `hermes:configure`, so update their `model.base_url` explicitly when migrating an existing profile.

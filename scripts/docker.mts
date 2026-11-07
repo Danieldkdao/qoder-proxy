@@ -68,11 +68,13 @@ async function docker(args: string[]): Promise<string> {
   });
   return stdout.trim();
 }
-function options(): ContainerOptions {
+export function containerOptions(
+  environment: NodeJS.ProcessEnv = process.env,
+): ContainerOptions {
   return {
-    image: process.env.QODER_DOCKER_IMAGE || "qoder-proxy:local",
-    name: process.env.QODER_CONTAINER_NAME || "qoder-proxy",
-    port: Number(process.env.QODER_HOST_PORT || 3000),
+    image: environment.QODER_DOCKER_IMAGE || "qoder-proxy:local",
+    name: environment.QODER_CONTAINER_NAME || "qoder-proxy",
+    port: Number(environment.QODER_HOST_PORT || 17843),
   };
 }
 async function managed(name: string): Promise<boolean> {
@@ -96,7 +98,7 @@ async function managed(name: string): Promise<boolean> {
   }
 }
 export async function dockerTask(action: string): Promise<void> {
-  const settings = options();
+  const settings = containerOptions();
   createArguments(settings);
   if (action === "build") {
     await execute("docker", ["build", "-t", settings.image, "."], {

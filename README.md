@@ -35,14 +35,14 @@ The secure launcher transmits an allowlisted payload over stdin. Secret values a
 
 The image uses Node 24, installs CA certificates and the pinned CLI, and runs as the non-root `node` user. Supply secrets at runtime. Do not mount your home directory, Docker socket, or source tree into the proxy. The default Docker build does not copy `.env`, Git metadata, tests, or development output.
 
-When Hermes runs on the same Mac as Docker, use `http://127.0.0.1:3000/v1`. From another container, use the proxy's service name on a private Docker network. For laptop access, SSH-forward the port rather than exposing it publicly.
+When Hermes runs on the same Mac as Docker, use `http://127.0.0.1:17843/v1`. From another container, use the proxy's service name on a private Docker network. For laptop access, SSH-forward the port rather than exposing it publicly.
 
 ## Hermes
 
 Run `hermes model`, select a custom OpenAI-compatible Chat Completions endpoint, and enter:
 
 ```text
-URL:   http://127.0.0.1:3000/v1
+URL:   http://127.0.0.1:17843/v1
 Key:   your PROXY_API_KEY
 Model: auto
 ```
