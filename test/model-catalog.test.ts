@@ -86,6 +86,16 @@ describe("live account and CLI model discovery", () => {
       expect(() => intersectModels(data, ["Auto"])).toThrow();
     expect(() => intersectModels(api, ["Unrelated"])).toThrow();
   });
+  it("exposes and validates only live per-model thinking efforts and disable support",async()=>{
+    const catalog=new ModelCatalog({api:async()=>({data:[{id:"reasoner",display_name:"Reasoner",efforts:["high","low","high"],default_effort:"high",support_disable_reasoning:true},{id:"plain",display_name:"Plain"}]}),cli:async()=>"MODEL\nReasoner\nPlain\n"});
+    const models=(await catalog.get()).models;
+    expect(models[0]).toMatchObject({supports_reasoning:true,supported_efforts:["low","high"],default_effort:"high",can_disable_reasoning:true});
+    expect(models[1].supports_reasoning).toBe(false);
+    expect(await catalog.validateEffort("reasoner","low")).toBe("low");
+    expect(await catalog.validateEffort("reasoner","none")).toBe("none");
+    expect(await catalog.validateEffort("plain",undefined)).toBeUndefined();
+    for(const [id,effort]of [["reasoner","medium"],["plain","high"],["plain","none"],["reasoner",false],["reasoner",{effort:"high"}]])await expect(catalog.validateEffort(id as string,effort)).rejects.toMatchObject({status:400});
+  });
   it("caches results, coalesces concurrent requests and refreshes after expiry", async () => {
     const f = fixture();
     const values = await Promise.all(

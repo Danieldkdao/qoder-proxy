@@ -78,6 +78,7 @@ function emit(prompt: string) {
         '{"tool_call":{"name":"terminal","arguments":{"command":"pwd"}}}';
   }
   const text =
+    (prompt.includes("REPORT_EFFORT") ? (args.includes("--thinking") ? "THINKING="+args[args.indexOf("--thinking")+1] : "EFFORT="+args[args.indexOf("--reasoning-effort")+1]) : "") ||
     (prompt.includes("REPORT_MODEL")
       ? "CLI_MODEL=" + args[args.indexOf("--model") + 1]
       : "") ||
