@@ -2,6 +2,11 @@
 
 A TypeScript OpenAI Chat Completions adapter for Qoder CLI, intended for a private Hermes Agent deployment. Hermes executes tools; the CLI runs with built-in tools disabled, no user/project settings, isolated temporary HOME/cwd, and no saved sessions.
 
+The Mac Mini checkout is at `~/HermesSetup/qoder-proxy`. The installed automatic
+startup bundle remains in Application Support, so moving this checkout does not
+require restarting or rebuilding the running proxy. The old Desktop location
+has been removed.
+
 ## Requirements and quick start
 
 - Node.js 22.18+ (Node 24 recommended), pnpm **12.18.0**, and Qoder CLI **1.1.84**.
