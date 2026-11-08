@@ -410,12 +410,19 @@ async function execute(
       if (
         event.is_error === true ||
         (typeof event.subtype === "string" && event.subtype.startsWith("error"))
-      )
+      ) {
+        // Classify only the CLI's exact error for the model actually requested.
+        // All other upstream diagnostic text stays private.
+        const unavailable =
+          event.result === `Model "${model}" is not available.`;
         throw new ProxyError(
-          "Qoder reported an unsuccessful result",
-          502,
-          "upstream_error",
+          unavailable
+            ? "Selected Qoder model is currently unavailable; choose another model or retry later"
+            : "Qoder reported an unsuccessful result",
+          unavailable ? 503 : 502,
+          unavailable ? "model_unavailable" : "upstream_error",
         );
+      }
       if (typeof event.result === "string") resultText = event.result;
       return;
     }

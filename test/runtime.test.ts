@@ -290,3 +290,25 @@ it("waits for an in-flight native capture read when the CLI exits", async () => 
     spy.mockRestore();
   }
 });
+
+it("classifies the selected model's explicit unavailability without exposing upstream diagnostics", async () => {
+  config.QODERCLI_BIN = binary(
+    `process.stdin.resume();process.stdin.on('end',()=>console.log(JSON.stringify({type:'result',is_error:true,subtype:'error_during_execution',result:'Model "cmodel" is not available.'})));`,
+  );
+  await expect(
+    runner.runQoder("synthetic availability check", "cmodel"),
+  ).rejects.toMatchObject({
+    status: 503,
+    code: "model_unavailable",
+    message:
+      "Selected Qoder model is currently unavailable; choose another model or retry later",
+  });
+  // An unrelated model name and any other CLI failure retain the safe generic error.
+  await expect(
+    runner.runQoder("synthetic availability check", "other_model"),
+  ).rejects.toMatchObject({
+    status: 502,
+    code: "upstream_error",
+    message: "Qoder reported an unsuccessful result",
+  });
+});

@@ -107,9 +107,7 @@ it("records a valid request without executing it or fabricating a result", async
     .trim()
     .split("\n")
     .map((l) => JSON.parse(l));
-  expect(records).toEqual([
-    { name: "terminal", arguments: { command } },
-  ]);
+  expect(records).toEqual([{ name: "terminal", arguments: { command } }]);
   s.call({
     name: list.result.tools[0].name,
     arguments: { command: "another" },
