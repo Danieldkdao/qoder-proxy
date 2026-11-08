@@ -393,7 +393,8 @@ async function execute(
   let activePoll: Promise<void> | undefined;
   const captureTimer = bridge
     ? setInterval(() => {
-        activePoll = poll();
+        // Preserve the promise of a pending filesystem read through CLI close.
+        if (!polling) activePoll = poll();
       }, 15)
     : undefined;
   const parse = async (line: string) => {

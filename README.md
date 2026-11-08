@@ -66,7 +66,7 @@ Calls are checked against declared names and JSON Schemas. `tool_choice` (auto/n
 
 The CLI only provides coarse output budgets through this adapter: `max_tokens`/`max_completion_tokens` may be 16000 or 32000 (mapped to CLI 16k/32k presets). Other limits, temperature, response-format constraints, and unknown options return 400 rather than being ignored. Token usage is unavailable and is never fabricated. A stream requesting `include_usage: true` receives an explicit final `usage: null` frame. Confirm your Hermes configuration's outgoing request options; auxiliary tasks needing unsupported options should use another provider.
 
-Streaming emits normal text or indexed tool calls, normalized finish reasons, keepalives, and `[DONE]`. A failure after the stream opens arrives as an SSE `error` object; HTTP status cannot change after headers. CLI work is cancelled when the caller disconnects. Timeouts escalate SIGTERM to SIGKILL on Unix process groups. Windows process-tree termination is not validated; the supported deployment target is Linux Docker/macOS.
+Streaming emits normal text or indexed tool calls, normalized finish reasons, keepalives, and `[DONE]`. A failure after the stream opens arrives as an SSE `error` object; HTTP status cannot change after headers. CLI work is cancelled when the caller disconnects. On CLI exit, the supervisor waits for any in-flight native tool capture before cleaning up request files. Timeouts escalate SIGTERM to SIGKILL on Unix process groups. Windows process-tree termination is not validated; the supported deployment target is Linux Docker/macOS.
 
 ## Configuration
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { createRequire } from "node:module";
 import { mkdtempSync, writeFileSync, chmodSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -209,4 +209,84 @@ it("captures native MCP requests and stops the CLI without executing a client to
   ]);
   expect(result.finishReason).toBe("tool_calls");
   expect(runner.processStats().nativeToolCalls).toBe(before + 1);
+});
+
+it("waits for an in-flight native capture read when the CLI exits", async () => {
+  const fs = require("node:fs/promises");
+  const originalRead = fs.readFile;
+  let releaseRead!: () => void;
+  let readStarted!: () => void;
+  const started = new Promise<void>((resolve) => {
+    readStarted = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  const spy = vi
+    .spyOn(fs, "readFile")
+    .mockImplementation(async (...args: unknown[]) => {
+      if (String(args[0]).endsWith("tool-requests.jsonl")) {
+        readStarted();
+        await gate;
+      }
+      return originalRead(...args);
+    });
+  config.QODER_TIMEOUT_MS = 2000;
+  config.QODERCLI_BIN = binary(`
+ const fs=require('node:fs');process.stdin.resume();process.stdin.on('end',()=>{
+ const args=process.argv.slice(2);const c=JSON.parse(fs.readFileSync(args[args.indexOf('--mcp-config')+1],'utf8'));
+ const state=JSON.parse(fs.readFileSync(c.mcpServers.hermes.args[1],'utf8'));
+ fs.writeFileSync(state.callsPath,JSON.stringify({name:'terminal',arguments:{command:'echo raced capture'}})+'\\n');
+ setTimeout(()=>process.exit(0),80);
+ });`);
+  let settled = false;
+  const pending = runner
+    .runQoder("race", "auto", undefined, undefined, undefined, undefined, {
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "terminal",
+            parameters: {
+              type: "object",
+              properties: { command: { type: "string" } },
+              required: ["command"],
+            },
+          },
+        },
+      ],
+      choice: "required",
+      parallel: false,
+    })
+    .then(
+      (result: unknown) => {
+        settled = true;
+        return { result };
+      },
+      (error: Error) => {
+        settled = true;
+        return { error };
+      },
+    );
+  try {
+    await started;
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    expect(settled, "CLI close must wait for its in-flight capture read").toBe(
+      false,
+    );
+    releaseRead();
+    const outcome = await pending;
+    expect(outcome).toMatchObject({
+      result: {
+        finishReason: "tool_calls",
+        toolCalls: [
+          { name: "terminal", arguments: { command: "echo raced capture" } },
+        ],
+      },
+    });
+  } finally {
+    releaseRead();
+    await pending;
+    spy.mockRestore();
+  }
 });
