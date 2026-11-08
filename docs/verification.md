@@ -1,6 +1,6 @@
 # Verification record
 
-Reviewed and updated on 2026-11-06. Original source: `b6facd03`.
+Historical baseline from 2026-11-06. Original source: `b6facd03`. For the current native MCP bridge and live model checks, see [model tool verification](model-tool-verification.md).
 
 ## Test-first evidence
 

@@ -93,7 +93,7 @@ agent:
 
 Launch that profile from `op run --environment ENVIRONMENT_ID -- hermes` so the key exists only in the process environment. Do not pass `--api-key SECRET` or paste the PAT into Hermes. The PAT authenticates the proxy to Qoder; the proxy key authenticates Hermes to the proxy.
 
-Some CLI options and model capabilities are intentionally unsupported; see README.md. Keep unsupported auxiliary tasks, image input and embeddings on another provider. Model adherence to the emulated tool protocol still needs a real account/model acceptance test.
+Some CLI options and model capabilities are intentionally unsupported; see README.md. Keep unsupported auxiliary tasks, image input and embeddings on another provider. Native MCP client-tool compatibility still needs a real account/model acceptance test; see [the model verification record](model-tool-verification.md).
 
 ## 5. Stop, reload secrets, or recover after reboot
 

@@ -117,7 +117,7 @@ Logs are bounded and RAM-only. Payload capture is disabled by default. Memory st
 
 Tests were committed before implementation. The original 33-test contract baseline had **30 failures and 3 passes** at commit `c49b2ce`. The suite exercises real HTTP servers and subprocesses with a deterministic fake CLI, plus pure validation and lifecycle tests. Later runtime prerequisites were also recorded as failing tests before their fixes.
 
-These tests do not call paid models or prove production quality for every Qoder model. Live Hermes acceptance requires your PAT and installed Hermes configuration. CLI and upstream behavior can change; test upgrades before updating the pinned version.
+These tests do not call paid models or prove production quality for every Qoder model. Live Hermes acceptance requires your PAT and installed Hermes configuration. CLI and upstream behavior can change; test upgrades before updating the pinned version. See the dated [live model tool verification](docs/model-tool-verification.md) for per-model Hermes checks and observed limits.
 
 CI runs tests before publishing AMD64/ARM64 images into the fork's own GHCR namespace. MIT license; retain the existing notice.
 

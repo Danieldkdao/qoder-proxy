@@ -46,7 +46,9 @@ The helper reads the service-account bootstrap token from Keychain, authenticate
 
 Reinstall the startup runtime after changing the helper, using `node scripts/tasks.mts autostart:install`. Hermes caches command credentials; after rotating the proxy key, recreate the proxy and restart/reconnect the gateway sessions so cached credentials are replaced. The service account must retain read-only access to the configured Environment and the login Keychain must remain available.
 
-## Verification on the Mini, November 6, 2026
+For subsequent native MCP and per-model live acceptance, see [model tool verification](model-tool-verification.md).
+
+## Historical verification on the Mini, November 6, 2026
 
 Regression tests were written and observed failing before implementation, then committed separately (`de89321`). The implementation (`03ac109`) passed 75 Vitest tests, three Docker credential-isolation integration tests, strict source/browser/test TypeScript checks and formatting. [GitHub test and multi-architecture publish jobs passed](https://github.com/Danieldkdao/qoder-proxy/actions/runs/42333246837).
 
