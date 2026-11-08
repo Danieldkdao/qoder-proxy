@@ -96,9 +96,10 @@ it("exposes only client-declared typed tools through native MCP discovery", asyn
 it("records a valid request without executing it or fabricating a result", async () => {
   const s = server();
   const list = await s.send("tools/list");
+  const command = `touch ${s.sentinel}\nprintf '%s' 'café 🙂 "quoted" \\\\path'\n`;
   s.call({
     name: list.result.tools[0].name,
-    arguments: { command: "touch " + s.sentinel },
+    arguments: { command },
   });
   await new Promise((r) => setTimeout(r, 70));
   expect(existsSync(s.sentinel)).toBe(false);
@@ -107,7 +108,7 @@ it("records a valid request without executing it or fabricating a result", async
     .split("\n")
     .map((l) => JSON.parse(l));
   expect(records).toEqual([
-    { name: "terminal", arguments: { command: "touch " + s.sentinel } },
+    { name: "terminal", arguments: { command } },
   ]);
   s.call({
     name: list.result.tools[0].name,
