@@ -36,7 +36,7 @@ The underlying task entry point also exists for secret-free CI, container builds
 ## 3. Build and start
 
 ```sh
-cd ~/HermesSetup/qoder-proxy
+cd ~/Hermes/Setup/qoder-proxy
 pnpm install --frozen-lockfile
 pnpm test
 pnpm run docker:build
